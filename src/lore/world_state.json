@@ -1,21 +1,22 @@
 {
-  "epoch": 2,
+  "epoch": 3,
   "worldName": "艾瑟里斯 (Aetheris)",
-  "unlockedLayers": 3,
+  "unlockedLayers": 4,
   "currentWeather": {
-    "name": "虛空微光薄霧 (Void Twilight Mist)",
-    "description": "虛空能量短暫滲透，敵方攻擊更具侵略性，但擊倒敵人可獲得雙倍星屑幣！",
-    "buffType": "VOID_CHALLENGE",
-    "damageBonus": 1.1,
-    "staminaBonus": 1.0
+    "name": "星鐵鍛爐狂潮 (Smith's Forge Heatwave)",
+    "description": "高層熔岩熱氣下湧，金屬共鳴強烈，完美格擋（Parry）彈刀硬直延長至 2.5 秒！",
+    "buffType": "PARRY_OVERLOAD",
+    "damageBonus": 1.2,
+    "staminaBonus": 1.2
   },
   "activeWorldEvent": {
-    "title": "第 3 層【蒼穹星軌迴廊 (Aetherial Skyway)】探索進程推進",
-    "description": "探測隊回報：半露天浮石走廊、狂風飛行魔鳥、失落星圖碑。藥劑師米拉在草叢中發現了稀有的「月光仙人掌」，調配出超大回血藥水！",
+    "title": "第 4 層【熔岩星鐵鍛爐 (Magma Forge Tier)】探索進程推進",
+    "description": "探測隊回報：地底熾熱熔岩湖、古代巨神兵殘骸、精鍊星鐵礦。藥劑師米拉在草叢中發現了稀有的「月光仙人掌」，調配出超大回血藥水！",
     "discoveredNpc": "藥劑師米拉在草叢中發現了稀有的「月光仙人掌」，調配出超大回血藥水！"
   },
-  "lastEvolvedAt": "2026-11-21 22:56:21",
+  "lastEvolvedAt": "2026-11-21 23:02:00",
   "evolutionLog": [
+    "【紀元 3 進化達成】天候轉化為「星鐵鍛爐狂潮 (Smith's Forge Heatwave)」，解鎖情報：熔岩星鐵鍛爐 (Magma Forge Tier)。",
     "【紀元 2 進化達成】天候轉化為「虛空微光薄霧 (Void Twilight Mist)」，解鎖情報：蒼穹星軌迴廊 (Aetherial Skyway)。",
     "【紀元 1 啟動】世界進化引擎初始化完成。以太極光降臨艾瑟里斯第 1 層始源之庭。"
   ]
