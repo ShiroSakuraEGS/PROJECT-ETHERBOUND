@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "catalog": "Open Source CC0 3D Assets for ETHERBOUND",
+  "sources": [
+    "https://github.com/toxsam/open-source-3D-assets",
+    "https://github.com/KhronosGroup/glTF-Sample-Assets",
+    "https://github.com/madjin/awesome-cc0"
+  ],
+  "weapons": [
+    {
+      "id": "knight_sword",
+      "name": "中世紀騎士長劍 (Knight Longsword)",
+      "category": "weapon",
+      "format": "glb",
+      "scale": 1.2,
+      "recommendedUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/AntiqueCamera/glTF-Binary/AntiqueCamera.glb",
+      "fallback": "procedural"
+    },
+    {
+      "id": "claymore",
+      "name": "星鐵雙手闊劍 (Claymore)",
+      "category": "weapon",
+      "format": "glb",
+      "scale": 1.6,
+      "fallback": "procedural"
+    },
+    {
+      "id": "round_shield",
+      "name": "以太符石圓盾 (Round Shield)",
+      "category": "shield",
+      "format": "glb",
+      "scale": 0.9,
+      "fallback": "procedural"
+    }
+  ],
+  "props": [
+    {
+      "id": "stone_pillar",
+      "name": "古代浮空石柱 (Ancient Pillar)",
+      "category": "environment",
+      "format": "glb",
+      "scale": 3.5,
+      "fallback": "procedural"
+    },
+    {
+      "id": "training_dummy",
+      "name": "訓練用木人樁 (Combat Dummy)",
+      "category": "prop",
+      "format": "glb",
+      "scale": 1.8,
+      "fallback": "procedural"
+    }
+  ]
+}

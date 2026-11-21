@@ -2,9 +2,11 @@ import * as THREE from 'three';
 import { SwordController } from '../combat/SwordController';
 import { GestureRecognizer, SlashDirection, GestureResult } from '../combat/GestureRecognizer';
 import { SoundEffects } from '../audio/SoundEffects';
+import { CameraImpulse } from '../camera/CameraImpulse';
 
 /**
  * 第一人稱玩家控制器 (Player)
+ * 解決滑鼠飄動 (Pointer Lock Delta Spike Filter) 與視角乾淨合成
  */
 export class Player {
   public camera: THREE.PerspectiveCamera;
@@ -28,12 +30,12 @@ export class Player {
   public position = new THREE.Vector3(0, 1.7, 8);
   private velocity = new THREE.Vector3();
   private isGrounded: boolean = true;
-  private readonly MOVE_SPEED = 7.0;
-  private readonly SPRINT_SPEED = 11.5;
+  private readonly MOVE_SPEED = 7.2;
+  private readonly SPRINT_SPEED = 12.0;
   private readonly JUMP_FORCE = 8.5;
   private readonly GRAVITY = 22.0;
 
-  // 攝影機旋轉
+  // 乾淨的視角歐拉角 (Pitch 仰俯, Yaw 水平)
   private pitch = 0;
   private yaw = 0;
   public isLocked: boolean = false;
@@ -58,7 +60,6 @@ export class Player {
     window.addEventListener('keydown', (e) => {
       this.keys[e.code] = true;
 
-      // 按 Q 鍵施展「以太劍氣波」特殊劍技
       if (e.code === 'KeyQ' && this.isLocked) {
         this.castEtherSkill();
       }
@@ -98,26 +99,31 @@ export class Player {
     window.addEventListener('mousemove', (e) => {
       if (!this.isLocked) return;
 
+      // 【核心修復 1】：滑鼠位移跳變保護 (Spike Filter)
+      // 在瀏覽器剛進入 Pointer Lock 或快速滑動時，過濾單幀超過 85 像素的異常硬體跳躍
+      const clampedX = Math.max(-85, Math.min(85, e.movementX));
+      const clampedY = Math.max(-85, Math.min(85, e.movementY));
+
       if (this.inCombatStance) {
-        const stanceSensitivity = 0.0003;
-        this.yaw -= e.movementX * stanceSensitivity;
-        this.pitch -= e.movementY * stanceSensitivity;
-        this.gesture.updatePoint(e.movementX, e.movementY);
+        // 攻擊架勢中大幅衰減鏡頭轉動，防止手勢揮劍時鏡頭劇烈甩頭
+        const stanceSensitivity = 0.00025;
+        this.yaw -= clampedX * stanceSensitivity;
+        this.pitch -= clampedY * stanceSensitivity;
+        this.gesture.updatePoint(clampedX, clampedY);
       } else {
-        const normalSensitivity = 0.0022;
-        this.yaw -= e.movementX * normalSensitivity;
-        this.pitch -= e.movementY * normalSensitivity;
+        // 正常探索視角 (平滑敏捷)
+        const normalSensitivity = 0.0020;
+        this.yaw -= clampedX * normalSensitivity;
+        this.pitch -= clampedY * normalSensitivity;
       }
 
-      this.pitch = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, this.pitch));
+      // 嚴格限制仰俯角 (-85° ~ +85°)，防止頭部翻轉
+      this.pitch = Math.max(-Math.PI / 2.05, Math.min(Math.PI / 2.05, this.pitch));
     });
 
     window.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
-  /**
-   * 釋放 Q 鍵以太劍氣
-   */
   private castEtherSkill() {
     const cost = 40;
     if (this.currentStamina < cost || this.sword.swinging) return;
@@ -163,7 +169,10 @@ export class Player {
     return { parried: false, blocked: false, damageDealt: amount };
   }
 
-  public update(delta: number, time: number) {
+  /**
+   * 每幀更新：乾淨合成玩家視角與彈簧衝擊 (Camera Impulse)
+   */
+  public update(delta: number, time: number, cameraImpulse?: CameraImpulse) {
     if (this.parryWindowTimer > 0) {
       this.parryWindowTimer -= delta;
     }
@@ -212,7 +221,7 @@ export class Player {
       this.position.y = 1.7;
       this.isGrounded = true;
     }
-    const arenaRadius = 23;
+    const arenaRadius = 24;
     const distFromCenter = Math.hypot(this.position.x, this.position.z);
     if (distFromCenter > arenaRadius) {
       const angle = Math.atan2(this.position.z, this.position.x);
@@ -220,8 +229,27 @@ export class Player {
       this.position.z = Math.sin(angle) * arenaRadius;
     }
 
+    // 【核心修復 2】：視角合成（乾淨的非累積疊加）
+    // 鏡頭位置 = 玩家物理位置 + 臨時衝擊位移
     this.camera.position.copy(this.position);
-    this.camera.quaternion.setFromEuler(new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ'));
+    if (cameraImpulse) {
+      this.camera.position.add(cameraImpulse.offset);
+    }
+
+    // 鏡頭旋轉 = 當前乾淨 Pitch/Yaw + 臨時彈簧角位移，每幀重置，絕不累加！
+    let finalPitch = this.pitch;
+    let finalYaw = this.yaw;
+    let finalRoll = 0;
+
+    if (cameraImpulse) {
+      finalPitch += cameraImpulse.rotationOffset.x;
+      finalYaw += cameraImpulse.rotationOffset.y;
+      finalRoll += cameraImpulse.rotationOffset.z;
+    }
+
+    this.camera.quaternion.setFromEuler(new THREE.Euler(finalPitch, finalYaw, finalRoll, 'YXZ'));
+
+    // 更新劍身姿態
     this.sword.update(delta, this.inCombatStance, this.isBlocking, time);
   }
 }

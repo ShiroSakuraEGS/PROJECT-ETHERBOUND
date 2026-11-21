@@ -66,7 +66,7 @@ export class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.18;
+    this.renderer.toneMappingExposure = 1.30;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -431,15 +431,11 @@ export class Game {
       return;
     }
 
-    // 1. 更新玩家實體
-    this.player.update(delta, elapsedTime);
-
-    // 2. 更新彈簧阻尼相機衝擊 (Camera Impulse)
+    // 1. 更新彈簧阻尼相機衝擊 (Camera Impulse)
     this.cameraImpulse.update(delta);
-    this.camera.position.add(this.cameraImpulse.offset);
-    this.camera.rotation.x += this.cameraImpulse.rotationOffset.x;
-    this.camera.rotation.y += this.cameraImpulse.rotationOffset.y;
-    this.camera.rotation.z += this.cameraImpulse.rotationOffset.z;
+
+    // 2. 乾淨合成玩家實體位置、視角與彈簧衝擊 (徹底杜絕視角漂移)
+    this.player.update(delta, elapsedTime, this.cameraImpulse);
 
     // 3. 採樣劍尖與劍顎座標，驅動 Ribbon 劍刃光軌
     const tipPos = this.player.sword.getBladeTipPosition();
