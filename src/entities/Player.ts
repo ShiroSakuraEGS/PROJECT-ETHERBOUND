@@ -42,10 +42,12 @@ export class Player {
   public mouseSensitivity: number = 0.0020;
 
   private keys: Record<string, boolean> = {};
+  private stepCycle: number = 0;
 
   // 回調監聽
   public onAttackExecuted?: (result: GestureResult) => void;
   public onSkillTriggered?: () => void;
+  public onDamaged?: (amount: number) => void;
 
   constructor(camera: THREE.PerspectiveCamera, sfx: SoundEffects) {
     this.camera = camera;
@@ -166,6 +168,9 @@ export class Player {
 
     this.currentHealth = Math.max(0, this.currentHealth - amount);
     this.sfx.playHitImpact();
+    if (this.onDamaged) {
+      this.onDamaged(amount);
+    }
     return { parried: false, blocked: false, damageDealt: amount };
   }
 
@@ -229,17 +234,40 @@ export class Player {
       this.position.z = Math.sin(angle) * arenaRadius;
     }
 
-    // 【核心修復 2】：視角合成（乾淨的非累積疊加）
-    // 鏡頭位置 = 玩家物理位置 + 臨時衝擊位移
-    this.camera.position.copy(this.position);
+    // 【核心提升：運鏡 Game Feel — 步伐起伏晃動 (Head Bobbing)】
+    const horizontalSpeed = Math.hypot(this.velocity.x, this.velocity.z);
+    let bobX = 0;
+    let bobY = 0;
+    let bobRoll = 0;
+
+    if (this.isGrounded && horizontalSpeed > 0.5) {
+      // 跑步時晃動加快，走路時輕柔有彈性
+      const bobFreq = isSprinting ? 14.0 : 9.5;
+      this.stepCycle += delta * bobFreq;
+
+      const bobAmp = isSprinting ? 0.055 : 0.035;
+      bobY = Math.sin(this.stepCycle) * bobAmp;
+      bobX = Math.cos(this.stepCycle * 0.5) * (bobAmp * 0.65);
+      bobRoll = Math.sin(this.stepCycle * 0.5) * 0.015;
+    } else {
+      // 靜止呼吸微幅律動
+      bobY = Math.sin(time * 2.2) * 0.008;
+    }
+
+    // 鏡頭位置 = 玩家物理位置 + 步伐起伏 + 臨時衝擊位移
+    this.camera.position.set(
+      this.position.x + bobX,
+      this.position.y + bobY,
+      this.position.z
+    );
     if (cameraImpulse) {
       this.camera.position.add(cameraImpulse.offset);
     }
 
-    // 鏡頭旋轉 = 當前乾淨 Pitch/Yaw + 臨時彈簧角位移，每幀重置，絕不累加！
+    // 鏡頭旋轉 = 當前乾淨 Pitch/Yaw + 步伐側傾 + 臨時彈簧角位移，每幀重置，絕不累加！
     let finalPitch = this.pitch;
     let finalYaw = this.yaw;
-    let finalRoll = 0;
+    let finalRoll = bobRoll;
 
     if (cameraImpulse) {
       finalPitch += cameraImpulse.rotationOffset.x;

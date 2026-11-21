@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { TextureGenerator } from './TextureGenerator';
 
 /**
  * 戰鬥訓練場場景構建器 (ArenaScene)
@@ -79,12 +80,18 @@ export class ArenaScene {
   }
 
   private buildEnvironment() {
-    // 1. 地面青石地磚 (提升明度與漫反射，清晰看清木人與地磚紋理)
-    const floorGeo = new THREE.CylinderGeometry(26, 26, 0.4, 48);
+    // 烘焙程序化青石地磚 PBR 貼圖套組 (漫反射、高精度法線、粗糙度)
+    const stonePBR = TextureGenerator.createCobblestonePBR(1024);
+
+    // 1. 地面青石地磚 (套用法線貼圖凹凸與真實石磚反射)
+    const floorGeo = new THREE.CylinderGeometry(26, 26, 0.4, 64);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x3b4252, // 明亮的諾斯克石青色
-      roughness: 0.55,
-      metalness: 0.2
+      map: stonePBR.map,
+      normalMap: stonePBR.normalMap,
+      normalScale: new THREE.Vector2(1.8, 1.8),
+      roughnessMap: stonePBR.roughnessMap,
+      roughness: 0.75,
+      metalness: 0.15
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.position.y = -0.2;
@@ -114,8 +121,10 @@ export class ArenaScene {
 
       const pGeo = new THREE.BoxGeometry(1.8, 5.5, 1.4);
       const pMat = new THREE.MeshStandardMaterial({
-        color: 0x4c566a,
-        roughness: 0.7,
+        map: stonePBR.map,
+        normalMap: stonePBR.normalMap,
+        normalScale: new THREE.Vector2(1.2, 1.2),
+        roughness: 0.8,
         metalness: 0.1
       });
       const p = new THREE.Mesh(pGeo, pMat);

@@ -16,7 +16,9 @@ export class HUD {
   private hudWeapon: HTMLElement;
   private questTitle: HTMLElement;
   private questObjective: HTMLElement;
+  private damageVignette: HTMLElement;
   private bannerTimeout: number | null = null;
+  private vignetteTimeout: number | null = null;
 
   constructor() {
     this.healthFill = document.getElementById('health-fill')!;
@@ -30,6 +32,7 @@ export class HUD {
     this.hudWeapon = document.getElementById('hud-weapon')!;
     this.questTitle = document.getElementById('quest-title')!;
     this.questObjective = document.getElementById('quest-objective')!;
+    this.damageVignette = document.getElementById('damage-vignette')!;
   }
 
   public updateStatus(currentHp: number, maxHp: number, currentSp: number, maxSp: number) {
@@ -92,5 +95,20 @@ export class HUD {
       this.combatBanner.style.opacity = '0';
       this.combatBanner.style.transform = 'translate(-50%, -50%) scale(1)';
     }, 1200);
+  }
+
+  /**
+   * 觸發受擊血紅暗角閃爍 (Damage Vignette Flash)
+   */
+  public triggerDamageFlash(intensity: number = 0.85) {
+    if (this.vignetteTimeout) {
+      window.clearTimeout(this.vignetteTimeout);
+    }
+
+    this.damageVignette.style.opacity = `${Math.min(1.0, intensity)}`;
+
+    this.vignetteTimeout = window.setTimeout(() => {
+      this.damageVignette.style.opacity = '0';
+    }, 300);
   }
 }

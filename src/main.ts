@@ -17,6 +17,7 @@ import { AmbientParticles } from './vfx/AmbientParticles';
 import { CameraImpulse } from './camera/CameraImpulse';
 import { InkSplatVFX } from './vfx/InkSplatVFX';
 import { MenuManager } from './ui/MenuManager';
+import { PostProcessing } from './rendering/PostProcessing';
 
 /**
  * 《PROJECT: ETHERBOUND》主程式 (Game Application)
@@ -40,6 +41,7 @@ export class Game {
   private questManager: QuestManager;
   private dynamicWorld: DynamicWorld;
   private menuManager: MenuManager;
+  private postProcessing: PostProcessing;
 
   // 三大支柱 VFX 與動力學模組
   private bladeTrail: BladeTrail;
@@ -87,6 +89,9 @@ export class Game {
     this.arena = new ArenaScene();
     this.player = new Player(this.camera, this.sfx);
     this.arena.scene.add(this.camera);
+
+    // 3A 級電影後處理渲染管線 (以太輝光 UnrealBloom + ACESFilmic 色調映射)
+    this.postProcessing = new PostProcessing(this.renderer, this.arena.scene, this.camera);
 
     // 初始化多界面與全螢幕管理器
     this.menuManager = new MenuManager(this.player, this.inventory, this.sfx, this.dynamicWorld);
@@ -169,6 +174,12 @@ export class Game {
       this.spawnEtherWave();
     };
 
+    // 受擊血紅暗角反饋與鏡頭晃盪
+    this.player.onDamaged = (amount) => {
+      this.hud.triggerDamageFlash(0.85);
+      this.cameraImpulse.addImpulse(new THREE.Vector3((Math.random() - 0.5) * 0.1, -0.06, 0.14));
+    };
+
     // 任務推進事件
     this.questManager.onQuestUpdated = (quest) => {
       this.hud.updateQuestHUD(quest);
@@ -216,6 +227,7 @@ export class Game {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.postProcessing.resize(window.innerWidth, window.innerHeight);
     });
 
     const blocker = document.getElementById('blocker')!;
@@ -472,7 +484,7 @@ export class Game {
 
     if (this.hitstopTimer > 0) {
       this.hitstopTimer -= delta;
-      this.renderer.render(this.arena.scene, this.camera);
+      this.postProcessing.render();
       return;
     }
 
@@ -511,9 +523,9 @@ export class Game {
       this.focusedNpc ? `[E] 與 ${this.focusedNpc.info.name} 交談` : ''
     );
 
-    // 6. 更新敵人 AI
+    // 6. 更新敵人 AI (傳入 delta, elapsedTime, 玩家位置與攻擊回調)
     for (const enemy of this.enemies) {
-      enemy.update(delta, this.player.position, (attackingEnemy) => {
+      enemy.update(delta, elapsedTime, this.player.position, (attackingEnemy: Enemy) => {
         this.handleEnemyAttack(attackingEnemy);
       });
     }
@@ -535,7 +547,7 @@ export class Game {
       this.player.gesture.active ? this.player.gesture.getCurrentVector() : undefined
     );
 
-    this.renderer.render(this.arena.scene, this.camera);
+    this.postProcessing.render();
   };
 }
 
