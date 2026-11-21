@@ -1,23 +1,52 @@
 {
-  "epoch": 3,
+  "epoch": 1,
   "worldName": "艾瑟里斯 (Aetheris)",
-  "unlockedLayers": 4,
+  "currentFloor": {
+    "floor_id": 1,
+    "name_en": "Verdant Breeze Plains",
+    "name_tc": "翠風平原與始源鎮",
+    "safe_zone": "始源鎮 (Origin Town)",
+    "description": "浮空百層塔第 1 層。廣袤微風草原與古代遺跡，由破曉之劍、鍛造同盟與藥劑工坊共同維護安全區。"
+  },
+  "unlockedLayers": 1,
   "currentWeather": {
-    "name": "星鐵鍛爐狂潮 (Smith's Forge Heatwave)",
-    "description": "高層熔岩熱氣下湧，金屬共鳴強烈，完美格擋（Parry）彈刀硬直延長至 2.5 秒！",
-    "buffType": "PARRY_OVERLOAD",
-    "damageBonus": 1.2,
-    "staminaBonus": 1.2
+    "name": "晨曦以太微光 (Dawn Aether Glow)",
+    "description": "晨曦以太共鳴灑落，視野清晰，玩家全技能冷卻縮短 10%，體力恢復加快 15%。",
+    "buffType": "DAWN_RESONANCE",
+    "damageBonus": 1.0,
+    "staminaBonus": 1.15
   },
   "activeWorldEvent": {
-    "title": "第 4 層【熔岩星鐵鍛爐 (Magma Forge Tier)】探索進程推進",
-    "description": "探測隊回報：地底熾熱熔岩湖、古代巨神兵殘骸、精鍊星鐵礦。藥劑師米拉在草叢中發現了稀有的「月光仙人掌」，調配出超大回血藥水！",
-    "discoveredNpc": "藥劑師米拉在草叢中發現了稀有的「月光仙人掌」，調配出超大回血藥水！"
+    "title": "第 1 層【始源鎮】攻略先遣隊集結",
+    "description": "破曉之劍（Blade of Dawn）團長雷納德指引覺醒者；鍛造同盟艾琳與藥劑師蜜拉提供武器淬火與藥劑支援。",
+    "discoveredNpc": "雷納德（晨曦之劍）、艾琳（鍛造同盟）、蜜拉（微風藥劑師）"
   },
-  "lastEvolvedAt": "2026-11-21 23:02:00",
+  "factions": [
+    {
+      "id": "blade_of_dawn",
+      "name": "破曉之劍",
+      "leader": "雷納德 (Leonard)"
+    },
+    {
+      "id": "smiths_guild",
+      "name": "鍛造同盟",
+      "leader": "艾琳 (Aileen)"
+    },
+    {
+      "id": "aether_info_net",
+      "name": "蒼穹情報網",
+      "leader": "維斯帕 (Vespa)"
+    },
+    {
+      "id": "void_whisperers",
+      "name": "虛空低語者",
+      "leader": "深淵主教 (Abyssal Hierarch)"
+    }
+  ],
+  "lastImportedAt": "2026-11-21 23:08:43",
+  "importSource": "project-etherbound — 奇幻劍擊冒險遊戲設定集 (Antigravity)-v1",
   "evolutionLog": [
-    "【紀元 3 進化達成】天候轉化為「星鐵鍛爐狂潮 (Smith's Forge Heatwave)」，解鎖情報：熔岩星鐵鍛爐 (Magma Forge Tier)。",
-    "【紀元 2 進化達成】天候轉化為「虛空微光薄霧 (Void Twilight Mist)」，解鎖情報：蒼穹星軌迴廊 (Aetherial Skyway)。",
-    "【紀元 1 啟動】世界進化引擎初始化完成。以太極光降臨艾瑟里斯第 1 層始源之庭。"
+    "【官方資料同步 2026-11-21 23:08:43】依據使用者導入檔案同步世界觀，鎖定第 1 層翠風平原與始源鎮。",
+    "【官方設定集導入】已對齊《project-etherbound》設定集 v1：鎖定艾瑟里斯第 1 層翠風平原，由破曉之劍、鍛造同盟與藥劑工坊駐守。"
   ]
 }
