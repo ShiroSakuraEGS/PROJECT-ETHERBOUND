@@ -1,5 +1,6 @@
 /**
  * 音效合成管理器 (SoundEffects)
+ * 依照設定集音效矩陣擴充：包含武器、劍氣、彈刀、藥水飲用、任務完成與 Boss 咆哮
  */
 export class SoundEffects {
   private ctx: AudioContext | null = null;
@@ -16,16 +17,11 @@ export class SoundEffects {
     }
   }
 
-  /**
-   * 播放啟動/拔劍出鞘龍鳴音效 (Sword Draw / Unsheathe)
-   */
   public playSwordDraw() {
     this.initCtx();
     if (!this.ctx) return;
-
     const t = this.ctx.currentTime;
 
-    // 金屬刮擦高頻
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sawtooth';
@@ -41,7 +37,6 @@ export class SoundEffects {
     osc.start();
     osc.stop(t + 0.56);
 
-    // 以太共鳴長泛音
     const bell = this.ctx.createOscillator();
     const bellGain = this.ctx.createGain();
     bell.type = 'sine';
@@ -88,7 +83,6 @@ export class SoundEffects {
   public playEtherWave() {
     this.initCtx();
     if (!this.ctx) return;
-
     const t = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -143,7 +137,6 @@ export class SoundEffects {
   public playParry() {
     this.initCtx();
     if (!this.ctx) return;
-
     const t = this.ctx.currentTime;
     const freqs = [1200, 1850, 2400];
 
@@ -167,7 +160,6 @@ export class SoundEffects {
   public playBlock() {
     this.initCtx();
     if (!this.ctx) return;
-
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'square';
@@ -181,5 +173,79 @@ export class SoundEffects {
     gain.connect(this.ctx.destination);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.11);
+  }
+
+  /**
+   * 飲用微風恢復藥水音效 (Drink Potion)
+   */
+  public playDrinkPotion() {
+    this.initCtx();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, t);
+    osc.frequency.linearRampToValueAtTime(640, t + 0.25);
+    osc.frequency.linearRampToValueAtTime(480, t + 0.45);
+
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(t + 0.52);
+  }
+
+  /**
+   * 任務完成明亮號角音效 (Quest Complete Fanfare)
+   */
+  public playQuestComplete() {
+    this.initCtx();
+    if (!this.ctx) return;
+    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 大和弦
+
+    notes.forEach((freq, idx) => {
+      if (!this.ctx) return;
+      const t = this.ctx.currentTime + idx * 0.12;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.35, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.65);
+    });
+  }
+
+  /**
+   * 守層 Boss 現身低音震鳴 (Boss Roar)
+   */
+  public playBossRoar() {
+    this.initCtx();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(80, t);
+    osc.frequency.linearRampToValueAtTime(140, t + 0.5);
+    osc.frequency.exponentialRampToValueAtTime(35, t + 1.2);
+
+    gain.gain.setValueAtTime(0.7, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.3);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(t + 1.35);
   }
 }

@@ -1,8 +1,8 @@
 import { SlashDirection, GestureResult } from '../combat/GestureRecognizer';
+import { QuestData } from '../quest/QuestManager';
 
 /**
  * 網頁 DOM HUD 管理器 (HUD)
- * 負責同步生命值、體力條、手勢準心導引與格擋提示通知
  */
 export class HUD {
   private healthFill: HTMLElement;
@@ -10,6 +10,12 @@ export class HUD {
   private crosshair: HTMLElement;
   private gestureIndicator: HTMLElement;
   private combatBanner: HTMLElement;
+  private interactPrompt: HTMLElement;
+  private hudCor: HTMLElement;
+  private hudPotions: HTMLElement;
+  private hudWeapon: HTMLElement;
+  private questTitle: HTMLElement;
+  private questObjective: HTMLElement;
   private bannerTimeout: number | null = null;
 
   constructor() {
@@ -18,11 +24,14 @@ export class HUD {
     this.crosshair = document.getElementById('crosshair')!;
     this.gestureIndicator = document.getElementById('gesture-indicator')!;
     this.combatBanner = document.getElementById('combat-banner')!;
+    this.interactPrompt = document.getElementById('interact-prompt')!;
+    this.hudCor = document.getElementById('hud-cor')!;
+    this.hudPotions = document.getElementById('hud-potions')!;
+    this.hudWeapon = document.getElementById('hud-weapon')!;
+    this.questTitle = document.getElementById('quest-title')!;
+    this.questObjective = document.getElementById('quest-objective')!;
   }
 
-  /**
-   * 更新玩家 HP 與體力條
-   */
   public updateStatus(currentHp: number, maxHp: number, currentSp: number, maxSp: number) {
     const hpPct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
     const spPct = Math.max(0, Math.min(100, (currentSp / maxSp) * 100));
@@ -31,9 +40,22 @@ export class HUD {
     this.staminaFill.style.width = `${spPct}%`;
   }
 
-  /**
-   * 更新準心與手勢提示
-   */
+  public updateInventoryHUD(cor: number, potions: number, weaponName: string) {
+    this.hudCor.innerText = cor.toString();
+    this.hudPotions.innerText = potions.toString();
+    this.hudWeapon.innerText = weaponName;
+  }
+
+  public updateQuestHUD(quest: QuestData) {
+    this.questTitle.innerText = quest.title;
+    this.questObjective.innerText = quest.objective;
+  }
+
+  public setInteractPrompt(visible: boolean, text: string = '[E] 交談 / 互動') {
+    this.interactPrompt.style.display = visible ? 'block' : 'none';
+    this.interactPrompt.innerText = text;
+  }
+
   public updateStanceUI(inStance: boolean, currentVector?: { dx: number; dy: number; distance: number; angle: number }) {
     if (inStance) {
       this.crosshair.classList.add('in-stance');
@@ -57,9 +79,6 @@ export class HUD {
     }
   }
 
-  /**
-   * 顯示戰鬥橫幅 (例如完美格擋成功)
-   */
   public showBanner(text: string, isParry: boolean = false) {
     if (this.bannerTimeout) {
       window.clearTimeout(this.bannerTimeout);

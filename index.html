@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PROJECT: ETHERBOUND — 以太界域 3D 動作劍術 RPG</title>
+  <title>PROJECT: ETHERBOUND — 艾瑟里斯 100 層浮空塔樓試煉</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Noto+Serif+TC:wght@400;600;900&display=swap" rel="stylesheet">
@@ -85,7 +85,7 @@
       left: 28px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
     .bar-container {
       display: flex;
@@ -128,6 +128,68 @@
       box-shadow: 0 0 12px rgba(0, 229, 255, 0.8);
       width: 100%;
     }
+
+    /* 貨幣與物資標籤 */
+    .inventory-bar {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #f1f5f9;
+      background: rgba(10, 14, 22, 0.7);
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .cor-badge { color: #ffd700; }
+    .potion-badge { color: #81c784; }
+    .weapon-badge { color: #00e5ff; }
+
+    /* 主線任務進程看板 (右上角) */
+    #quest-tracker {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      background: rgba(10, 14, 22, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-left: 4px solid #ffd700;
+      border-radius: 10px;
+      padding: 14px 20px;
+      max-width: 380px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+    }
+    .quest-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #ffd700;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .quest-objective {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    /* 互動提示焦點 (Interact prompt) */
+    #interact-prompt {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #00e5ff;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #00e5ff;
+      letter-spacing: 1.5px;
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.7);
+      display: none;
+    }
+
     /* 戰鬥反饋橫幅 */
     #combat-banner {
       position: absolute;
@@ -146,6 +208,7 @@
       color: #ffd700 !important;
       text-shadow: 0 0 25px rgba(255, 215, 0, 1), 0 0 50px rgba(255, 152, 0, 0.9) !important;
     }
+
     /* 右下角 HUD 提示卡 */
     #guide-pill {
       position: absolute;
@@ -161,12 +224,58 @@
       line-height: 1.8;
       box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
     }
-    #guide-pill span {
-      color: #00e5ff;
-      font-weight: 700;
+    #guide-pill span { color: #00e5ff; font-weight: 700; }
+    #guide-pill b { color: #ffd700; }
+
+    /* ========================================================
+       NPC 對話介面 (Dialogue Box)
+       ======================================================== */
+    #dialogue-box {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 780px;
+      max-width: 90%;
+      background: rgba(11, 17, 28, 0.95);
+      backdrop-filter: blur(16px);
+      border: 2px solid rgba(212, 175, 55, 0.6);
+      border-radius: 16px;
+      padding: 24px 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(0, 229, 255, 0.1);
+      display: none;
+      pointer-events: auto;
+      z-index: 50;
     }
-    #guide-pill b {
-      color: #ffd700;
+    .dialogue-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      padding-bottom: 8px;
+    }
+    #dialogue-name {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+    }
+    #dialogue-title {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    #dialogue-text {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #f1f5f9;
+      margin-bottom: 16px;
+      min-height: 50px;
+    }
+    #dialogue-close {
+      text-align: right;
+      font-size: 12px;
+      color: #00e5ff;
+      letter-spacing: 1px;
     }
 
     /* ========================================================
@@ -205,7 +314,6 @@
       position: relative;
       overflow: hidden;
     }
-    /* 頂部以太光芒流光線 */
     .cover-frame::before {
       content: '';
       position: absolute;
@@ -227,7 +335,6 @@
       color: #ffd700;
       text-transform: uppercase;
       margin-bottom: 8px;
-      opacity: 0.9;
     }
     .game-logo {
       font-family: 'Cinzel', serif;
@@ -254,11 +361,9 @@
       line-height: 1.7;
       margin-bottom: 30px;
       padding: 0 20px;
-      opacity: 0.85;
       border-left: 2px solid rgba(0, 229, 255, 0.5);
       border-right: 2px solid rgba(0, 229, 255, 0.5);
     }
-    /* 三大特色卡片 */
     .features-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -273,25 +378,16 @@
       padding: 16px 14px;
       transition: all 0.25s ease;
     }
-    .feat-card:hover {
-      background: rgba(0, 229, 255, 0.08);
-      border-color: rgba(0, 229, 255, 0.4);
-      transform: translateY(-3px);
-    }
     .feat-card h4 {
       font-size: 14px;
       color: #00e5ff;
       margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
     .feat-card p {
       font-size: 12px;
       color: #94a3b8;
       line-height: 1.6;
     }
-    /* 啟動主按鈕 */
     .play-btn {
       display: inline-flex;
       align-items: center;
@@ -306,20 +402,12 @@
       letter-spacing: 3px;
       border-radius: 50px;
       cursor: pointer;
-      box-shadow: 0 0 25px rgba(0, 180, 216, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.2);
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      font-family: 'Cinzel', 'Noto Serif TC', serif;
+      box-shadow: 0 0 25px rgba(0, 180, 216, 0.6);
+      transition: all 0.3s;
     }
     .play-btn:hover {
       transform: scale(1.06);
-      box-shadow: 0 0 35px rgba(0, 229, 255, 0.9), inset 0 0 20px rgba(255, 255, 255, 0.4);
       background: linear-gradient(135deg, #00e5ff 0%, #0096c7 50%, #023e8a 100%);
-    }
-    .footer-hints {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 22px;
-      letter-spacing: 1px;
     }
   </style>
 </head>
@@ -330,8 +418,9 @@
     <div id="crosshair"></div>
     <div id="gesture-indicator">攻擊手勢</div>
     <div id="combat-banner"></div>
+    <div id="interact-prompt">[E] 交談 / 互動</div>
 
-    <!-- 玩家 HP / SP -->
+    <!-- 玩家 HP / SP 與背包狀態 -->
     <div class="status-bars">
       <div class="bar-container">
         <span class="bar-label">HP 生命</span>
@@ -345,53 +434,70 @@
           <div id="stamina-fill" class="bar-fill"></div>
         </div>
       </div>
+      <div class="inventory-bar">
+        <span class="cor-badge">💰 <span id="hud-cor">50</span> Cor</span>
+        <span class="potion-badge">🧪 <span id="hud-potions">3</span> 藥水 [R]</span>
+        <span class="weapon-badge">⚔️ <span id="hud-weapon">練習用以太長劍</span></span>
+      </div>
+    </div>
+
+    <!-- 主線任務進程看板 (右上角) -->
+    <div id="quest-tracker">
+      <div class="quest-title" id="quest-title">主線一：無籍者的甦醒</div>
+      <div class="quest-objective" id="quest-objective">在木人前揮劍 3 次並按下 [Q] 釋放以太劍氣</div>
     </div>
 
     <!-- 快捷按鍵小卡 -->
     <div id="guide-pill">
       <div><span>滑鼠移動</span>：控制第一人稱視角</div>
-      <div><span>按住左鍵 + 滑動</span>：進入劍術架勢並<b>真軌跡揮劍</b></div>
-      <div><span>滑動速度</span>：慢速為輕斬 / 快速為<b>破防重斬</b></div>
+      <div><span>按住左鍵 + 滑動</span>：真軌跡揮劍（慢速輕斬 / 快速重斬）</div>
       <div><span>滑鼠右鍵</span>：防禦（精準時機觸發<b>⚡ 完美格擋 Parry</b>）</div>
-      <div><span>[Q 鍵]</span>：消耗 40 體力施展<b>【以太劍氣波】遠程劍技</b></div>
-      <div><span>WASD / Shift / Space</span>：移動 / 衝刺 / 跳躍</div>
+      <div><span>[Q 鍵]</span>：消耗 40 體力施展<b>【以太劍氣波】</b></div>
+      <div><span>[R 鍵]</span>：飲用<b>微風恢復藥水</b> (恢復 50 HP)</div>
+      <div><span>[E 鍵]</span>：與 NPC 交談或互動</div>
     </div>
   </div>
 
-  <!-- 高級 3A 遊戲封面 Title Screen -->
+  <!-- NPC 對話視窗 -->
+  <div id="dialogue-box">
+    <div class="dialogue-header">
+      <div id="dialogue-name">雷歐納德 (Leonard)</div>
+      <div id="dialogue-title">破曉之劍．前線副隊長</div>
+    </div>
+    <div id="dialogue-text">歡迎來到艾瑟里斯第 1 層的試煉之庭。</div>
+    <div id="dialogue-close">[ 按 E 或 ESC 關閉對話 ]</div>
+  </div>
+
+  <!-- 高級 3A 遊戲開場封面 -->
   <div id="blocker">
     <div class="cover-frame">
-      <div class="version-tag">PROJECT: ETHERBOUND // PROTO-BUILD v0.2.0</div>
+      <div class="version-tag">PROJECT: ETHERBOUND // AETHERIS ACT 1</div>
       <h1 class="game-logo">ETHERBOUND</h1>
-      <h2 class="game-subtitle">以太界域 — 第一人稱滑鼠軌跡動作劍術 RPG</h2>
+      <h2 class="game-subtitle">艾瑟里斯 — 百層浮空遺跡塔動作 RPG</h2>
 
       <p class="story-quote">
-        「在分歧後的以太界域，沒有預設的英雄宿命。<br>
-        握緊手中的以太長劍，用滑鼠劃出的真實軌跡，斬破籠罩大地的長夜。」
+        「千年前的大斷裂鎖閉了蒼穹樞紐，無籍的覺醒者啊，<br>
+        拔出你的劍，以真實的軌跡撕裂虛空，邁向第 100 層的破曉之路。」
       </p>
 
       <div class="features-grid">
         <div class="feat-card">
-          <h4>🗡️ 滑鼠真軌跡揮劍</h4>
-          <p>長按左鍵擺出攻擊架勢，向四方滑動決定斬擊方向，滑動速率直接決定輕斬與重斬破防。</p>
+          <h4>🗡️ 物理軌跡三段式劍術</h4>
+          <p>左橫斬、右反手、上撩挑斬與重劈，完全由玩家滑鼠手勢與速度即時映射。</p>
         </div>
         <div class="feat-card">
-          <h4>🛡️ 精準彈刀 (Parry)</h4>
-          <p>捕捉敵人攻擊前搖的紅光預兆，在刀鋒命中前 0.18 秒舉劍格擋，觸發金屬彈刀與破防硬直。</p>
+          <h4>🛡️ 精準招架與霸體破防</h4>
+          <p>0.18 秒精準彈反窗口，金屬彈刀震鳴，中斷守護者招式並觸發 1.8 倍易傷。</p>
         </div>
         <div class="feat-card">
-          <h4>⚡ 以太劍氣技能</h4>
-          <p>按下 [Q] 鍵消耗 40 點體力，激發高速月牙以太光波，遠距離穿透並重創敵方陣列。</p>
+          <h4>⚡ 蒼穹星鐵與以太共鳴</h4>
+          <p>與鍛造同盟艾琳、破曉騎士雷歐納德互動，重鑄長劍，突破第 1 層守層 Boss！</p>
         </div>
       </div>
 
       <button id="start-btn" class="play-btn">
-        ⚔️ 拔劍出鞘．進入以太界域
+        ⚔️ 拔劍出鞘．登入艾瑟里斯
       </button>
-
-      <div class="footer-hints">
-        [提示] 點擊後將鎖定滑鼠進入第一人稱視角，按 ESC 鍵可隨時暫停並釋放滑鼠
-      </div>
     </div>
   </div>
 
