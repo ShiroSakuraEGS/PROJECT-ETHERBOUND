@@ -16,6 +16,7 @@ import { BladeTrail } from './vfx/BladeTrail';
 import { AmbientParticles } from './vfx/AmbientParticles';
 import { CameraImpulse } from './camera/CameraImpulse';
 import { InkSplatVFX } from './vfx/InkSplatVFX';
+import { MenuManager } from './ui/MenuManager';
 
 /**
  * 《PROJECT: ETHERBOUND》主程式 (Game Application)
@@ -38,6 +39,7 @@ export class Game {
   private inventory: Inventory;
   private questManager: QuestManager;
   private dynamicWorld: DynamicWorld;
+  private menuManager: MenuManager;
 
   // 三大支柱 VFX 與動力學模組
   private bladeTrail: BladeTrail;
@@ -85,6 +87,30 @@ export class Game {
     this.arena = new ArenaScene();
     this.player = new Player(this.camera, this.sfx);
     this.arena.scene.add(this.camera);
+
+    // 初始化多界面與全螢幕管理器
+    this.menuManager = new MenuManager(this.player, this.inventory, this.sfx, this.dynamicWorld);
+    this.menuManager.setCallbacks(
+      () => {
+        // 關閉選單恢復遊戲時，若非封面且非對話，鎖定指針
+        const blocker = document.getElementById('blocker')!;
+        if (blocker.classList.contains('fade-out') && !this.dialogueBox.isOpen) {
+          document.body.requestPointerLock();
+        }
+      },
+      () => {
+        // 返回主選單
+        const blocker = document.getElementById('blocker')!;
+        blocker.classList.remove('fade-out');
+        if (document.pointerLockElement) {
+          document.exitPointerLock();
+        }
+      },
+      (newFov: number) => {
+        this.camera.fov = newFov;
+        this.camera.updateProjectionMatrix();
+      }
+    );
 
     // 3. 初始化三大支柱 VFX 與動力學模組
     this.bladeTrail = new BladeTrail(this.arena.scene);
@@ -194,6 +220,8 @@ export class Game {
 
     const blocker = document.getElementById('blocker')!;
     const startBtn = document.getElementById('start-btn')!;
+    const titleCodexBtn = document.getElementById('title-codex-btn');
+    const titleGuideBtn = document.getElementById('title-guide-btn');
 
     startBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -201,7 +229,20 @@ export class Game {
       document.body.requestPointerLock();
     });
 
-    blocker.addEventListener('click', () => {
+    titleCodexBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.menuManager.openTab('codex');
+    });
+
+    titleGuideBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.menuManager.openTab('guide');
+    });
+
+    blocker.addEventListener('click', (e) => {
+      // 避免點到次要按鈕也觸發進入遊戲
+      const target = e.target as HTMLElement;
+      if (target.closest('button')) return;
       this.sfx.playSwordDraw();
       document.body.requestPointerLock();
     });
@@ -212,9 +253,13 @@ export class Game {
 
       if (isLocked) {
         blocker.classList.add('fade-out');
+        if (this.menuManager.isOpen) {
+          this.menuManager.close();
+        }
       } else {
-        if (!this.dialogueBox.isOpen) {
-          blocker.classList.remove('fade-out');
+        // 如果當前不在封面、不在 NPC 對話框中、也不是主動開啟面板，則自動呼叫暫停選單
+        if (blocker.classList.contains('fade-out') && !this.dialogueBox.isOpen && !this.menuManager.isOpen) {
+          this.menuManager.openTab('pause');
         }
       }
     });

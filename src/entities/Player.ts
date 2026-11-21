@@ -39,6 +39,7 @@ export class Player {
   private pitch = 0;
   private yaw = 0;
   public isLocked: boolean = false;
+  public mouseSensitivity: number = 0.0020;
 
   private keys: Record<string, boolean> = {};
 
@@ -111,10 +112,9 @@ export class Player {
         this.pitch -= clampedY * stanceSensitivity;
         this.gesture.updatePoint(clampedX, clampedY);
       } else {
-        // 正常探索視角 (平滑敏捷)
-        const normalSensitivity = 0.0020;
-        this.yaw -= clampedX * normalSensitivity;
-        this.pitch -= clampedY * normalSensitivity;
+        // 正常探索視角 (平滑敏捷，支援設定介面自訂靈敏度)
+        this.yaw -= clampedX * this.mouseSensitivity;
+        this.pitch -= clampedY * this.mouseSensitivity;
       }
 
       // 嚴格限制仰俯角 (-85° ~ +85°)，防止頭部翻轉

@@ -30,6 +30,51 @@
       top: 0;
       left: 0;
     }
+
+    /* 頂部快速功能列 (Top Menu Bar) */
+    #top-menu-bar {
+      position: absolute;
+      top: 20px;
+      right: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 60;
+    }
+    .top-nav-btn {
+      background: rgba(13, 20, 32, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      color: #e2e8f0;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .top-nav-btn:hover {
+      background: rgba(0, 229, 255, 0.15);
+      border-color: #00e5ff;
+      color: #00e5ff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 229, 255, 0.3);
+    }
+    .top-nav-btn.fullscreen-btn {
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+    .top-nav-btn.fullscreen-btn:hover {
+      background: rgba(255, 215, 0, 0.2);
+      border-color: #ffd700;
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    }
+
     /* 遊戲 HUD 覆蓋層 */
     #ui-overlay {
       position: absolute;
@@ -145,10 +190,10 @@
     .potion-badge { color: #81c784; }
     .weapon-badge { color: #00e5ff; }
 
-    /* 主線任務進程看板 (右上角) */
+    /* 主線任務進程看板 (右上偏下) */
     #quest-tracker {
       position: absolute;
-      top: 24px;
+      top: 80px;
       right: 28px;
       background: rgba(10, 14, 22, 0.88);
       backdrop-filter: blur(12px);
@@ -228,8 +273,234 @@
     #guide-pill b { color: #ffd700; }
 
     /* ========================================================
-       NPC 對話介面 (Dialogue Box)
+       多介面彈窗系統 (Modal Dialogs)
        ======================================================== */
+    #menu-modal-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 8, 14, 0.82);
+      backdrop-filter: blur(18px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 80;
+      padding: 24px;
+    }
+
+    .game-modal {
+      display: none;
+      width: 860px;
+      max-width: 95%;
+      max-height: 90vh;
+      background: rgba(13, 20, 32, 0.95);
+      border: 2px solid rgba(212, 175, 55, 0.5);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 229, 255, 0.08);
+      position: relative;
+      overflow-y: auto;
+      padding: 32px 38px;
+      animation: modalPop 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .modal-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #ffd700;
+      font-family: 'Cinzel', serif;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .modal-close-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+
+    /* 暫停選單樣式 */
+    .pause-menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    .pause-item-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      padding: 16px 24px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #f1f5f9;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+    .pause-item-btn:hover {
+      background: rgba(0, 229, 255, 0.15);
+      border-color: #00e5ff;
+      color: #00e5ff;
+      transform: translateX(8px);
+    }
+    .pause-item-btn.resume {
+      background: linear-gradient(135deg, rgba(0, 180, 216, 0.3) 0%, rgba(3, 4, 94, 0.4) 100%);
+      border-color: #00e5ff;
+    }
+
+    /* 背包與裝備樣式 */
+    .inventory-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr 220px;
+      gap: 20px;
+    }
+    .inv-column {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .inv-column h4 {
+      font-size: 15px;
+      color: #00e5ff;
+      margin-bottom: 14px;
+      letter-spacing: 1px;
+      border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+      padding-bottom: 8px;
+    }
+    .equip-slot {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px dashed rgba(212, 175, 55, 0.4);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .equip-slot-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .equip-slot-name {
+      font-size: 14px;
+      color: #ffd700;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .inventory-grid-slot {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 14px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .inventory-grid-slot:hover {
+      border-color: #00e5ff;
+      background: rgba(0, 229, 255, 0.08);
+    }
+    .slot-icon { font-size: 24px; margin-bottom: 6px; }
+    .slot-name { font-size: 13px; font-weight: 700; color: #f8fafc; }
+    .slot-qty { font-size: 12px; color: #ffd700; margin-top: 4px; }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .stat-label { color: #94a3b8; }
+    .stat-val { color: #f1f5f9; font-weight: bold; }
+
+    /* 世界圖鑑樣式 */
+    .codex-section {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 16px;
+    }
+    .codex-section h3 {
+      font-size: 16px;
+      color: #ffd700;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .codex-section p {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.8;
+      margin-bottom: 8px;
+    }
+    .codex-section ul {
+      margin-left: 20px;
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.8;
+    }
+
+    /* 設定樣式 */
+    .settings-group {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 16px;
+    }
+    .settings-group h4 {
+      font-size: 15px;
+      color: #00e5ff;
+      margin-bottom: 14px;
+    }
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      font-size: 14px;
+    }
+    .setting-slider {
+      width: 220px;
+      accent-color: #00e5ff;
+    }
+
+    /* NPC 對話介面 (Dialogue Box) */
     #dialogue-box {
       position: absolute;
       bottom: 60px;
@@ -278,9 +549,7 @@
       letter-spacing: 1px;
     }
 
-    /* ========================================================
-       高級 3A 遊戲開場封面 (Cinematic Title Cover)
-       ======================================================== */
+    /* 遊戲開場封面 (Title Cover) */
     #blocker {
       position: absolute;
       top: 0;
@@ -308,7 +577,7 @@
       background: rgba(15, 22, 36, 0.75);
       border: 1px solid rgba(212, 175, 55, 0.4);
       border-radius: 18px;
-      padding: 44px 50px;
+      padding: 40px 48px;
       text-align: center;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 0 35px rgba(0, 229, 255, 0.08);
       position: relative;
@@ -338,7 +607,7 @@
     }
     .game-logo {
       font-family: 'Cinzel', serif;
-      font-size: 56px;
+      font-size: 52px;
       font-weight: 900;
       letter-spacing: 8px;
       margin-bottom: 6px;
@@ -348,45 +617,27 @@
       filter: drop-shadow(0 0 25px rgba(0, 229, 255, 0.6));
     }
     .game-subtitle {
-      font-size: 17px;
+      font-size: 16px;
       letter-spacing: 4px;
       color: #94a3b8;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       font-weight: 600;
     }
     .story-quote {
       font-style: italic;
       color: #93c5fd;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.7;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
       padding: 0 20px;
       border-left: 2px solid rgba(0, 229, 255, 0.5);
       border-right: 2px solid rgba(0, 229, 255, 0.5);
     }
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+    .cover-actions {
+      display: flex;
+      justify-content: center;
       gap: 16px;
-      margin-bottom: 34px;
-      text-align: left;
-    }
-    .feat-card {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 16px 14px;
-      transition: all 0.25s ease;
-    }
-    .feat-card h4 {
-      font-size: 14px;
-      color: #00e5ff;
-      margin-bottom: 8px;
-    }
-    .feat-card p {
-      font-size: 12px;
-      color: #94a3b8;
-      line-height: 1.6;
+      margin-top: 26px;
     }
     .play-btn {
       display: inline-flex;
@@ -396,8 +647,8 @@
       background: linear-gradient(135deg, #00b4d8 0%, #0077b6 50%, #03045e 100%);
       border: 1px solid #00e5ff;
       color: #ffffff;
-      padding: 16px 48px;
-      font-size: 18px;
+      padding: 15px 44px;
+      font-size: 17px;
       font-weight: 900;
       letter-spacing: 3px;
       border-radius: 50px;
@@ -406,13 +657,45 @@
       transition: all 0.3s;
     }
     .play-btn:hover {
-      transform: scale(1.06);
+      transform: scale(1.05);
       background: linear-gradient(135deg, #00e5ff 0%, #0096c7 50%, #023e8a 100%);
+    }
+    .secondary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #e2e8f0;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .secondary-btn:hover {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: #ffd700;
+      color: #ffd700;
+      transform: translateY(-2px);
     }
   </style>
 </head>
 <body>
   <div id="canvas-container"></div>
+
+  <!-- 頂部快速功能列 (支援全螢幕、背包、圖鑑、指南、暫停) -->
+  <div id="top-menu-bar">
+    <button id="nav-btn-bag" class="top-nav-btn" title="打開背包與角色屬性 [B]">🎒 背包 (B)</button>
+    <button id="nav-btn-codex" class="top-nav-btn" title="艾瑟里斯世界圖鑑 [L]">📜 圖鑑 (L)</button>
+    <button id="nav-btn-guide" class="top-nav-btn" title="戰鬥指南與手勢 [H]">⚔️ 指南 (H)</button>
+    <button id="nav-btn-settings" class="top-nav-btn" title="系統設定 [O]">⚙️ 設定 (O)</button>
+    <button id="nav-btn-pause" class="top-nav-btn" title="暫停遊戲 [ESC]">⏸️ 暫停 (ESC)</button>
+    <button id="btn-fullscreen" class="top-nav-btn fullscreen-btn" title="切換全螢幕模式 (F11)">⛶ 全螢幕</button>
+  </div>
 
   <div id="ui-overlay">
     <div id="crosshair"></div>
@@ -437,14 +720,14 @@
       <div class="inventory-bar">
         <span class="cor-badge">💰 <span id="hud-cor">50</span> Cor</span>
         <span class="potion-badge">🧪 <span id="hud-potions">3</span> 藥水 [R]</span>
-        <span class="weapon-badge">⚔️ <span id="hud-weapon">練習用以太長劍</span></span>
+        <span class="weapon-badge">⚔️ <span id="hud-weapon">白銀訓練長劍</span></span>
       </div>
     </div>
 
     <!-- 主線任務進程看板 (右上角) -->
     <div id="quest-tracker">
       <div style="font-size:11px; color:#38bdf8; letter-spacing:1px; margin-bottom:4px;" id="world-weather-badge">
-        🌐 [紀元 1] 天候：以太極光嵐 (+25% 傷害)
+        🌐 艾瑟里斯 第 1 層：翠風平原 (晨曦微光)
       </div>
       <div class="quest-title" id="quest-title">主線一：無籍者的甦醒</div>
       <div class="quest-objective" id="quest-objective">在木人前揮劍 3 次並按下 [Q] 釋放以太劍氣</div>
@@ -455,10 +738,186 @@
       <div><span>滑鼠移動</span>：控制第一人稱視角</div>
       <div><span>按住左鍵 + 滑動</span>：真軌跡揮劍（慢速輕斬 / 快速重斬）</div>
       <div><span>滑鼠右鍵</span>：防禦（精準時機觸發<b>⚡ 完美格擋 Parry</b>）</div>
-      <div><span>[Q 鍵]</span>：消耗 40 體力施展<b>【以太劍氣波】</b></div>
-      <div><span>[R 鍵]</span>：飲用<b>微風恢復藥水</b> (恢復 50 HP)</div>
-      <div><span>[E 鍵]</span>：與 NPC 交談或互動</div>
+      <div><span>[Q 鍵]</span>：施展<b>【以太劍氣波】</b> ｜ <span>[R 鍵]</span>：飲用<b>微風藥水</b></div>
+      <div><span>[B 鍵]</span>：角色與背包 ｜ <span>[L 鍵]</span>：世界圖鑑 ｜ <span>[ESC]</span>：暫停</div>
     </div>
+  </div>
+
+  <!-- 多介面模態視窗容器 (Modal Container) -->
+  <div id="menu-modal-container">
+    
+    <!-- 1. 暫停選單 (Pause Modal) -->
+    <div id="modal-pause" class="game-modal">
+      <div class="modal-header">
+        <div class="modal-title">⏸️ 戰鬥暫停 (GAME PAUSED)</div>
+        <button class="modal-close-btn">繼續冒險 [ESC]</button>
+      </div>
+      <div class="pause-menu-list">
+        <button id="pause-btn-resume" class="pause-item-btn resume">
+          <span>⚔️ 拔劍繼續戰鬥</span>
+          <span>[ESC]</span>
+        </button>
+        <button id="pause-btn-inventory" class="pause-item-btn">
+          <span>🎒 角色屬性與背包道具</span>
+          <span>[B]</span>
+        </button>
+        <button id="pause-btn-codex" class="pause-item-btn">
+          <span>📜 艾瑟里斯世界圖鑑與情報</span>
+          <span>[L]</span>
+        </button>
+        <button id="pause-btn-guide" class="pause-item-btn">
+          <span>📖 戰鬥指南與劍技操作手冊</span>
+          <span>[H]</span>
+        </button>
+        <button id="pause-btn-settings" class="pause-item-btn">
+          <span>⚙️ 畫面、視角與滑鼠設定</span>
+          <span>[O]</span>
+        </button>
+        <button id="pause-btn-title" class="pause-item-btn" style="border-color:#ef4444; color:#fca5a5;">
+          <span>🚪 退出至遊戲標題封面</span>
+          <span>[QUIT]</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. 角色與背包面板 (Inventory Modal) -->
+    <div id="modal-inventory" class="game-modal" style="width: 920px;">
+      <div class="modal-header">
+        <div class="modal-title">🎒 角色裝備與冒險背包</div>
+        <button class="modal-close-btn">關閉 [ESC]</button>
+      </div>
+      <div class="inventory-layout">
+        <!-- 左欄：角色裝備 -->
+        <div class="inv-column">
+          <h4>🛡️ 穿戴裝備 (Equipment)</h4>
+          <div class="equip-slot">
+            <div class="equip-slot-label">主手長劍 (Main Hand)</div>
+            <div id="equip-weapon-name" class="equip-slot-name">白銀訓練長劍</div>
+          </div>
+          <div class="equip-slot">
+            <div class="equip-slot-label">護手 / 格擋盾 (Off Hand)</div>
+            <div class="equip-slot-name">星鐵合金手甲 (Parry +0.18s)</div>
+          </div>
+          <div class="equip-slot">
+            <div class="equip-slot-label">防具 (Armor)</div>
+            <div class="equip-slot-name">覺醒者以太輕甲</div>
+          </div>
+          <div class="equip-slot">
+            <div class="equip-slot-label">飾品 (Amulet)</div>
+            <div class="equip-slot-name">晨曦破曉徽記</div>
+          </div>
+        </div>
+
+        <!-- 中欄：背包物品網格 -->
+        <div class="inv-column">
+          <h4>📦 隨身背包 (Inventory Grid)</h4>
+          <div id="bag-grid-items" class="grid-container">
+            <!-- 動態注入道具 -->
+          </div>
+        </div>
+
+        <!-- 右欄：角色即時戰鬥數值 -->
+        <div class="inv-column">
+          <h4>📊 角色體魄與劍技屬性</h4>
+          <div class="stat-row">
+            <span class="stat-label">生命值 (HP)</span>
+            <span id="stat-hp" class="stat-val">100 / 100</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">體力值 (SP)</span>
+            <span id="stat-sp" class="stat-val">100 / 100</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">斬擊傷害</span>
+            <span id="stat-atk" class="stat-val">35 物理 / 20 乙太</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">彈刀窗口 (Parry)</span>
+            <span id="stat-parry" class="stat-val">0.18 秒</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">以太劍氣消耗</span>
+            <span class="stat-val">40 SP</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">體力自然恢復</span>
+            <span class="stat-val">+24 SP/秒</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 世界圖鑑面板 (Codex Modal) -->
+    <div id="modal-codex" class="game-modal">
+      <div class="modal-header">
+        <div class="modal-title">📜 艾瑟里斯世界圖鑑 (Aetheris Codex)</div>
+        <button class="modal-close-btn">關閉 [ESC]</button>
+      </div>
+      <div id="codex-dynamic-content">
+        <!-- 動態注入官方設定集內容 -->
+      </div>
+    </div>
+
+    <!-- 4. 戰鬥指南面板 (Guide Modal) -->
+    <div id="modal-guide" class="game-modal">
+      <div class="modal-header">
+        <div class="modal-title">⚔️ 第一人稱劍術指南與操作規格手冊</div>
+        <button class="modal-close-btn">關閉 [ESC]</button>
+      </div>
+      <div class="codex-section">
+        <h3>🗡️ 物理軌跡滑鼠揮劍系統</h3>
+        <p>按住<b>滑鼠左鍵</b>進入【攻擊架勢】，此時準心化為藍色虛線環。拖曳滑鼠以決定斬擊方向：</p>
+        <ul>
+          <li><b>👉 向右滑動</b>：右橫斬（扇形範圍掃擊，適合應對多名敵人）</li>
+          <li><b>👈 向左滑動</b>：左橫斬（反手近身突斬，出刀速度極快）</li>
+          <li><b>👆 向上滑動</b>：上撩挑斬（將下段防禦撕開，可使守衛浮空失衡）</li>
+          <li><b>👇 向下滑動</b>：當頭下劈（重斬破甲，威力高達 1.5 倍）</li>
+        </ul>
+        <p style="margin-top:8px;"><span style="color:#ffd700">★ 速度倍率機制：</span>快速甩動滑鼠將觸發【重斬（Heavy Slash）】，傷害倍率提升 1.4 倍並附帶更劇烈的手感反饋！</p>
+      </div>
+      <div class="codex-section">
+        <h3>🛡️ 精準招架與彈刀 (Perfect Parry)</h3>
+        <p>在敵方攻擊即將命中的 <b>0.18 秒黃金窗口</b>按下<b>滑鼠右鍵</b>：</p>
+        <ul>
+          <li>完全免除任何傷害。</li>
+          <li>爆發刺眼金色火花與水墨震盪，產生金屬鏗鏘彈刀音效。</li>
+          <li><b>中斷敵方連續技</b>，並令對手陷入 <b>1.8 ~ 2.5 秒失衡癱瘓狀態（Stagger）</b>，受到的後續傷害加乘 1.8 倍！</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 5. 設定面板 (Settings Modal) -->
+    <div id="modal-settings" class="game-modal" style="width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ 系統設定與操作調整</div>
+        <button class="modal-close-btn">關閉 [ESC]</button>
+      </div>
+      <div class="settings-group">
+        <h4>🖥️ 顯示與全螢幕</h4>
+        <div class="setting-item">
+          <span>全螢幕顯示模式</span>
+          <button id="settings-toggle-fs" class="top-nav-btn fullscreen-btn">切換全螢幕 (F11)</button>
+        </div>
+        <div class="setting-item">
+          <span>鏡頭視野 (FOV)</span>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <input id="settings-fov" type="range" min="60" max="95" value="75" class="setting-slider" />
+            <span id="settings-fov-val" style="color:#00e5ff; font-weight:bold; width:35px;">75°</span>
+          </div>
+        </div>
+      </div>
+      <div class="settings-group">
+        <h4>🖱️ 控制與靈敏度</h4>
+        <div class="setting-item">
+          <span>滑鼠旋轉靈敏度</span>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <input id="settings-sens" type="range" min="0.4" max="2.5" step="0.1" value="1.0" class="setting-slider" />
+            <span id="settings-sens-val" style="color:#00e5ff; font-weight:bold; width:35px;">1.0x</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- NPC 對話視窗 -->
@@ -467,7 +926,7 @@
       <div id="dialogue-name">雷歐納德 (Leonard)</div>
       <div id="dialogue-title">破曉之劍．前線副隊長</div>
     </div>
-    <div id="dialogue-text">歡迎來到艾瑟里斯第 1 層的試煉之庭。</div>
+    <div id="dialogue-text">歡迎來到艾瑟里斯第 1 層的始源之庭。</div>
     <div id="dialogue-close">[ 按 E 或 ESC 關閉對話 ]</div>
   </div>
 
@@ -483,24 +942,17 @@
         拔出你的劍，以真實的軌跡撕裂虛空，邁向第 100 層的破曉之路。」
       </p>
 
-      <div class="features-grid">
-        <div class="feat-card">
-          <h4>🗡️ 物理軌跡三段式劍術</h4>
-          <p>左橫斬、右反手、上撩挑斬與重劈，完全由玩家滑鼠手勢與速度即時映射。</p>
-        </div>
-        <div class="feat-card">
-          <h4>🛡️ 精準招架與霸體破防</h4>
-          <p>0.18 秒精準彈反窗口，金屬彈刀震鳴，中斷守護者招式並觸發 1.8 倍易傷。</p>
-        </div>
-        <div class="feat-card">
-          <h4>⚡ 蒼穹星鐵與以太共鳴</h4>
-          <p>與鍛造同盟艾琳、破曉騎士雷歐納德互動，重鑄長劍，突破第 1 層守層 Boss！</p>
-        </div>
+      <div class="cover-actions">
+        <button id="start-btn" class="play-btn">
+          ⚔️ 拔劍出鞘．登入艾瑟里斯
+        </button>
+        <button id="title-codex-btn" class="secondary-btn">
+          📜 世界觀設定 (Lore)
+        </button>
+        <button id="title-guide-btn" class="secondary-btn">
+          ⚔️ 戰鬥操作指引 (Guide)
+        </button>
       </div>
-
-      <button id="start-btn" class="play-btn">
-        ⚔️ 拔劍出鞘．登入艾瑟里斯
-      </button>
     </div>
   </div>
 
