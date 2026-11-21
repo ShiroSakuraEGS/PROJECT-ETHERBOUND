@@ -1,6 +1,5 @@
 /**
  * 音效合成管理器 (SoundEffects)
- * 透過 Web Audio API 程序化合成劍擊、破空、彈刀、受擊與以太魔法劍氣音效
  */
 export class SoundEffects {
   private ctx: AudioContext | null = null;
@@ -18,8 +17,44 @@ export class SoundEffects {
   }
 
   /**
-   * 播放劍刃破空聲 (Whoosh)
+   * 播放啟動/拔劍出鞘龍鳴音效 (Sword Draw / Unsheathe)
    */
+  public playSwordDraw() {
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+
+    // 金屬刮擦高頻
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(600, t);
+    osc.frequency.exponentialRampToValueAtTime(1600, t + 0.18);
+    osc.frequency.exponentialRampToValueAtTime(800, t + 0.5);
+
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(t + 0.56);
+
+    // 以太共鳴長泛音
+    const bell = this.ctx.createOscillator();
+    const bellGain = this.ctx.createGain();
+    bell.type = 'sine';
+    bell.frequency.setValueAtTime(1200, t + 0.1);
+    bellGain.gain.setValueAtTime(0.3, t + 0.1);
+    bellGain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+    bell.connect(bellGain);
+    bellGain.connect(this.ctx.destination);
+    bell.start(t + 0.1);
+    bell.stop(t + 1.25);
+  }
+
   public playWhoosh(isHeavy: boolean = false) {
     this.initCtx();
     if (!this.ctx) return;
@@ -50,9 +85,6 @@ export class SoundEffects {
     noise.start();
   }
 
-  /**
-   * 播放以太劍氣波施法音效 (Ether Wave Magic Slash)
-   */
   public playEtherWave() {
     this.initCtx();
     if (!this.ctx) return;
@@ -75,9 +107,6 @@ export class SoundEffects {
     osc.stop(t + 0.46);
   }
 
-  /**
-   * 播放劍擊斬切命中聲 (Slash Impact)
-   */
   public playHitImpact() {
     this.initCtx();
     if (!this.ctx) return;
@@ -111,9 +140,6 @@ export class SoundEffects {
     metal.stop(this.ctx.currentTime + 0.13);
   }
 
-  /**
-   * 播放完美格擋彈刀聲 (Perfect Parry)
-   */
   public playParry() {
     this.initCtx();
     if (!this.ctx) return;
@@ -138,9 +164,6 @@ export class SoundEffects {
     });
   }
 
-  /**
-   * 播放普通防禦格擋聲 (Block)
-   */
   public playBlock() {
     this.initCtx();
     if (!this.ctx) return;
