@@ -1,0 +1,22 @@
+{
+  "epoch": 2,
+  "worldName": "艾瑟里斯 (Aetheris)",
+  "unlockedLayers": 3,
+  "currentWeather": {
+    "name": "虛空微光薄霧 (Void Twilight Mist)",
+    "description": "虛空能量短暫滲透，敵方攻擊更具侵略性，但擊倒敵人可獲得雙倍星屑幣！",
+    "buffType": "VOID_CHALLENGE",
+    "damageBonus": 1.1,
+    "staminaBonus": 1.0
+  },
+  "activeWorldEvent": {
+    "title": "第 3 層【蒼穹星軌迴廊 (Aetherial Skyway)】探索進程推進",
+    "description": "探測隊回報：半露天浮石走廊、狂風飛行魔鳥、失落星圖碑。藥劑師米拉在草叢中發現了稀有的「月光仙人掌」，調配出超大回血藥水！",
+    "discoveredNpc": "藥劑師米拉在草叢中發現了稀有的「月光仙人掌」，調配出超大回血藥水！"
+  },
+  "lastEvolvedAt": "2026-11-21 22:56:21",
+  "evolutionLog": [
+    "【紀元 2 進化達成】天候轉化為「虛空微光薄霧 (Void Twilight Mist)」，解鎖情報：蒼穹星軌迴廊 (Aetherial Skyway)。",
+    "【紀元 1 啟動】世界進化引擎初始化完成。以太極光降臨艾瑟里斯第 1 層始源之庭。"
+  ]
+}

@@ -9,6 +9,7 @@ import { HUD } from './ui/HUD';
 import { DialogueBox } from './ui/DialogueBox';
 import { Inventory } from './items/Inventory';
 import { QuestManager, QuestStage } from './quest/QuestManager';
+import { DynamicWorld } from './lore/DynamicWorld';
 import { SlashDirection, GestureResult } from './combat/GestureRecognizer';
 import { EtherWave } from './combat/EtherWave';
 import { BladeTrail } from './vfx/BladeTrail';
@@ -36,6 +37,7 @@ export class Game {
   private dialogueBox: DialogueBox;
   private inventory: Inventory;
   private questManager: QuestManager;
+  private dynamicWorld: DynamicWorld;
 
   // 三大支柱 VFX 與動力學模組
   private bladeTrail: BladeTrail;
@@ -78,6 +80,7 @@ export class Game {
     this.dialogueBox = new DialogueBox();
     this.inventory = new Inventory();
     this.questManager = new QuestManager(this.inventory);
+    this.dynamicWorld = new DynamicWorld();
 
     this.arena = new ArenaScene();
     this.player = new Player(this.camera, this.sfx);
@@ -254,7 +257,8 @@ export class Game {
     const spawnPos = this.player.position.clone().addScaledVector(forward, 0.8);
 
     const wave = new EtherWave(spawnPos, forward);
-    wave.damage = Math.round(wave.damage * this.inventory.weaponDamageMultiplier);
+    const worldDmgMult = this.dynamicWorld.damageMultiplier;
+    wave.damage = Math.round(wave.damage * this.inventory.weaponDamageMultiplier * worldDmgMult);
     this.arena.scene.add(wave.mesh);
     this.etherWaves.push(wave);
 
@@ -319,7 +323,8 @@ export class Game {
 
       if (dist <= maxHitDist && angle < 0.85) {
         let baseDamage = result.isHeavy ? 45 : 22;
-        baseDamage = Math.round(baseDamage * this.inventory.weaponDamageMultiplier);
+        const worldDmgMult = this.dynamicWorld.damageMultiplier;
+        baseDamage = Math.round(baseDamage * this.inventory.weaponDamageMultiplier * worldDmgMult);
 
         const killed = enemy.takeDamage(baseDamage, result.direction, result.isHeavy);
 
