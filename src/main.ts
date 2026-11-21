@@ -18,6 +18,7 @@ import { CameraImpulse } from './camera/CameraImpulse';
 import { InkSplatVFX } from './vfx/InkSplatVFX';
 import { MenuManager } from './ui/MenuManager';
 import { PostProcessing } from './rendering/PostProcessing';
+import { ClassSkillManager } from './systems/ClassSkillManager';
 
 /**
  * 《PROJECT: ETHERBOUND》主程式 (Game Application)
@@ -42,6 +43,7 @@ export class Game {
   private dynamicWorld: DynamicWorld;
   private menuManager: MenuManager;
   private postProcessing: PostProcessing;
+  private classSkillManager: ClassSkillManager;
 
   // 三大支柱 VFX 與動力學模組
   private bladeTrail: BladeTrail;
@@ -93,8 +95,18 @@ export class Game {
     // 3A 級電影後處理渲染管線 (以太輝光 UnrealBloom + ACESFilmic 色調映射)
     this.postProcessing = new PostProcessing(this.renderer, this.arena.scene, this.camera);
 
+    // 初始化職業、天賦與武器庫管理器 (設定集 v2)
+    this.classSkillManager = new ClassSkillManager();
+    this.player.currentParryWindow = this.classSkillManager.parryWindow;
+
     // 初始化多界面與全螢幕管理器
-    this.menuManager = new MenuManager(this.player, this.inventory, this.sfx, this.dynamicWorld);
+    this.menuManager = new MenuManager(
+      this.player,
+      this.inventory,
+      this.sfx,
+      this.dynamicWorld,
+      this.classSkillManager
+    );
     this.menuManager.setCallbacks(
       () => {
         // 關閉選單恢復遊戲時，若非封面且非對話，鎖定指針
@@ -178,6 +190,17 @@ export class Game {
     this.player.onDamaged = (amount) => {
       this.hud.triggerDamageFlash(0.85);
       this.cameraImpulse.addImpulse(new THREE.Vector3((Math.random() - 0.5) * 0.1, -0.06, 0.14));
+    };
+
+    // 職業與武器切換監聽 (設定集 v2)
+    this.classSkillManager.onClassChanged = (newClass) => {
+      this.player.currentParryWindow = this.classSkillManager.parryWindow;
+      this.hud.showBanner(`✨ 主職業已切換為【${newClass.name}】！Parry窗口: ${this.classSkillManager.parryWindow.toFixed(2)}s`);
+    };
+
+    this.classSkillManager.onWeaponChanged = (newWeapon) => {
+      this.hud.updateInventoryHUD(this.inventory.cor, this.inventory.potions, newWeapon.name);
+      this.hud.showBanner(`⚔️ 已裝備【${newWeapon.name}】！ATK ${newWeapon.atk}`);
     };
 
     // 任務推進事件
@@ -379,7 +402,8 @@ export class Game {
       const maxHitDist = enemy.type === EnemyType.VoidBoss ? 4.2 : 3.5;
 
       if (dist <= maxHitDist && angle < 0.85) {
-        let baseDamage = result.isHeavy ? 45 : 22;
+        let baseDamage = this.classSkillManager.totalPhysicalDamage;
+        if (result.isHeavy) baseDamage = Math.round(baseDamage * 1.4);
         const worldDmgMult = this.dynamicWorld.damageMultiplier;
         baseDamage = Math.round(baseDamage * this.inventory.weaponDamageMultiplier * worldDmgMult);
 
@@ -428,7 +452,14 @@ export class Game {
       this.cameraImpulse.addParryImpulse();
       this.questManager.recordParry();
       this.inkSplat.spawnInkBurst(this.player.position.clone().add(new THREE.Vector3(0, 0, -1)), forward, true);
-      this.hud.showBanner('⚡ 完美格擋 (PERFECT PARRY)！敵人破防 1.8s！', true);
+
+      // 天賦彈反回血 (Parry Heal)
+      const heal = this.classSkillManager.parryHealAmount;
+      if (heal > 0) {
+        this.player.currentHealth = Math.min(this.player.maxHealth, this.player.currentHealth + heal);
+      }
+
+      this.hud.showBanner(`⚡ 完美格擋 (PERFECT PARRY)！敵人破防！${heal > 0 ? ` (+${heal} HP)` : ''}`, true);
       this.spawnSparks(this.player.position.clone().add(new THREE.Vector3(0, 0, -1)));
     } else if (result.blocked) {
       this.cameraImpulse.addImpulse(new THREE.Vector3(0, 0, 0.04));

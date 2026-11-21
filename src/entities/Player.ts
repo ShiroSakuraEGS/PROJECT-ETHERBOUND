@@ -25,6 +25,7 @@ export class Player {
   public isBlocking: boolean = false;
   public inCombatStance: boolean = false;
   public parryWindowTimer: number = 0;
+  public currentParryWindow: number = 0.18;
 
   // 移動與物理
   public position = new THREE.Vector3(0, 1.7, 8);
@@ -82,7 +83,7 @@ export class Player {
         }
       } else if (e.button === 2) {
         this.isBlocking = true;
-        this.parryWindowTimer = 0.18;
+        this.parryWindowTimer = this.currentParryWindow;
       }
     });
 

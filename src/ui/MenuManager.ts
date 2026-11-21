@@ -2,18 +2,19 @@ import { Player } from '../entities/Player';
 import { Inventory } from '../items/Inventory';
 import { SoundEffects } from '../audio/SoundEffects';
 import { DynamicWorld } from '../lore/DynamicWorld';
+import { ClassSkillManager } from '../systems/ClassSkillManager';
+import { CLASSES, WEAPONS_CATALOG, ADVANCED_FLOORS } from '../lore/AetherisLore';
 
-export type MenuTab = 'none' | 'pause' | 'inventory' | 'codex' | 'guide' | 'settings';
+export type MenuTab = 'none' | 'pause' | 'inventory' | 'codex' | 'guide' | 'settings' | 'skills';
 
 /**
  * 遊戲多界面與全螢幕管理器 (MenuManager)
- * 負責掌控：
- * 1. 全螢幕切換 (Fullscreen API + Resize 監聽)
- * 2. 暫停選單 (Pause Menu)
- * 3. 角色與背包面板 (Character & Inventory Screen - [B])
- * 4. 世界圖鑑與樓層傳記 (World Lore & Codex Screen - [L])
- * 5. 劍術指南與按鍵操作手冊 (Combat Guide - [H])
- * 6. 系統偏好設定面板 (Settings Screen - [O])
+ * 整合《project-etherbound 設定集 v2》全部功能：
+ * 1. 5 大主職業切換 (Swordsman / Guardian / Tempest / Spellblade / Berserker)
+ * 2. 官方武器庫切換 (直劍 / 細劍 / 重劍 / 蒼穹太刀)
+ * 3. 技能天賦樹加點分配 (攻擊 / 防禦 / 探索分支)
+ * 4. 世界圖鑑 (第 1 至 10 層詳細生態與 Boss 機制)
+ * 5. 全螢幕切換與視野設定
  */
 export class MenuManager {
   private activeTab: MenuTab = 'none';
@@ -21,6 +22,8 @@ export class MenuManager {
   private inventory: Inventory;
   private sfx: SoundEffects;
   private dynamicWorld: DynamicWorld;
+  public classSkillManager: ClassSkillManager;
+
   private onResumeGameCallback?: () => void;
   private onQuitToTitleCallback?: () => void;
   private onFovChangeCallback?: (fov: number) => void;
@@ -30,22 +33,31 @@ export class MenuManager {
   private modalContainer: HTMLElement;
   private pauseModal: HTMLElement;
   private inventoryModal: HTMLElement;
+  private skillsModal: HTMLElement;
   private codexModal: HTMLElement;
   private guideModal: HTMLElement;
   private settingsModal: HTMLElement;
   private fullscreenBtn: HTMLElement;
   private isFullscreen: boolean = false;
 
-  constructor(player: Player, inventory: Inventory, sfx: SoundEffects, dynamicWorld: DynamicWorld) {
+  constructor(
+    player: Player,
+    inventory: Inventory,
+    sfx: SoundEffects,
+    dynamicWorld: DynamicWorld,
+    classSkillManager: ClassSkillManager
+  ) {
     this.player = player;
     this.inventory = inventory;
     this.sfx = sfx;
     this.dynamicWorld = dynamicWorld;
+    this.classSkillManager = classSkillManager;
 
     this.topMenuBar = document.getElementById('top-menu-bar')!;
     this.modalContainer = document.getElementById('menu-modal-container')!;
     this.pauseModal = document.getElementById('modal-pause')!;
     this.inventoryModal = document.getElementById('modal-inventory')!;
+    this.skillsModal = document.getElementById('modal-skills')!;
     this.codexModal = document.getElementById('modal-codex')!;
     this.guideModal = document.getElementById('modal-guide')!;
     this.settingsModal = document.getElementById('modal-settings')!;
@@ -85,6 +97,7 @@ export class MenuManager {
     // 隱藏所有面板
     this.pauseModal.style.display = 'none';
     this.inventoryModal.style.display = 'none';
+    this.skillsModal.style.display = 'none';
     this.codexModal.style.display = 'none';
     this.guideModal.style.display = 'none';
     this.settingsModal.style.display = 'none';
@@ -99,6 +112,9 @@ export class MenuManager {
     } else if (tab === 'inventory') {
       this.inventoryModal.style.display = 'block';
       this.renderInventoryPanel();
+    } else if (tab === 'skills') {
+      this.skillsModal.style.display = 'block';
+      this.renderSkillsPanel();
     } else if (tab === 'codex') {
       this.codexModal.style.display = 'block';
       this.renderCodexPanel();
@@ -117,6 +133,7 @@ export class MenuManager {
     this.modalContainer.style.display = 'none';
     this.pauseModal.style.display = 'none';
     this.inventoryModal.style.display = 'none';
+    this.skillsModal.style.display = 'none';
     this.codexModal.style.display = 'none';
     this.guideModal.style.display = 'none';
     this.settingsModal.style.display = 'none';
@@ -142,7 +159,7 @@ export class MenuManager {
   }
 
   private bindEvents() {
-    // 1. 全螢幕按鈕與快捷鍵
+    // 1. 全螢幕按鈕
     this.fullscreenBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleFullscreen();
@@ -155,7 +172,6 @@ export class MenuManager {
       if (settingsFsBtn) {
         settingsFsBtn.innerText = this.isFullscreen ? '退出全螢幕 (F11)' : '切換全螢幕 (F11)';
       }
-      // 觸發視窗重繪
       window.dispatchEvent(new Event('resize'));
     });
 
@@ -163,6 +179,11 @@ export class MenuManager {
     document.getElementById('nav-btn-bag')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.openTab(this.activeTab === 'inventory' ? 'none' : 'inventory');
+    });
+
+    document.getElementById('nav-btn-skills')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openTab(this.activeTab === 'skills' ? 'none' : 'skills');
     });
 
     document.getElementById('nav-btn-codex')?.addEventListener('click', (e) => {
@@ -194,73 +215,53 @@ export class MenuManager {
     });
 
     // 4. 暫停選單內部各按鈕
-    document.getElementById('pause-btn-resume')?.addEventListener('click', () => {
-      this.close();
-    });
-
-    document.getElementById('pause-btn-inventory')?.addEventListener('click', () => {
-      this.openTab('inventory');
-    });
-
-    document.getElementById('pause-btn-codex')?.addEventListener('click', () => {
-      this.openTab('codex');
-    });
-
-    document.getElementById('pause-btn-guide')?.addEventListener('click', () => {
-      this.openTab('guide');
-    });
-
-    document.getElementById('pause-btn-settings')?.addEventListener('click', () => {
-      this.openTab('settings');
-    });
-
+    document.getElementById('pause-btn-resume')?.addEventListener('click', () => this.close());
+    document.getElementById('pause-btn-inventory')?.addEventListener('click', () => this.openTab('inventory'));
+    document.getElementById('pause-btn-skills')?.addEventListener('click', () => this.openTab('skills'));
+    document.getElementById('pause-btn-codex')?.addEventListener('click', () => this.openTab('codex'));
+    document.getElementById('pause-btn-guide')?.addEventListener('click', () => this.openTab('guide'));
+    document.getElementById('pause-btn-settings')?.addEventListener('click', () => this.openTab('settings'));
     document.getElementById('pause-btn-title')?.addEventListener('click', () => {
       this.close();
-      if (this.onQuitToTitleCallback) {
-        this.onQuitToTitleCallback();
-      }
+      if (this.onQuitToTitleCallback) this.onQuitToTitleCallback();
     });
 
     // 5. 鍵盤快捷鍵管理
     window.addEventListener('keydown', (e) => {
-      // 若正在對話中，則交給對話框處理
       const dialogueBox = document.getElementById('dialogue-box');
-      if (dialogueBox && dialogueBox.style.display === 'block') {
-        return;
-      }
+      if (dialogueBox && dialogueBox.style.display === 'block') return;
 
-      // [ESC] 鍵：若在次級介面則返回暫停或關閉
       if (e.code === 'Escape') {
         if (this.activeTab === 'pause') {
           this.close();
         } else if (this.activeTab !== 'none') {
           this.openTab('pause');
         } else {
-          // 在遊戲中按 ESC 呼叫暫停
           this.openTab('pause');
         }
         return;
       }
 
-      // [B 鍵]：切換背包面板
       if (e.code === 'KeyB') {
         this.openTab(this.activeTab === 'inventory' ? 'none' : 'inventory');
         return;
       }
 
-      // [L 鍵] 或 [M 鍵]：切換圖鑑面板
+      if (e.code === 'KeyK') {
+        this.openTab(this.activeTab === 'skills' ? 'none' : 'skills');
+        return;
+      }
+
       if (e.code === 'KeyL' || e.code === 'KeyM') {
         this.openTab(this.activeTab === 'codex' ? 'none' : 'codex');
         return;
       }
 
-      // [H 鍵]：切換指引手冊
       if (e.code === 'KeyH') {
         this.openTab(this.activeTab === 'guide' ? 'none' : 'guide');
         return;
       }
 
-      // [O 鍵]：切換設定
       if (e.code === 'KeyO') {
         this.openTab(this.activeTab === 'settings' ? 'none' : 'settings');
         return;
@@ -269,10 +270,100 @@ export class MenuManager {
   }
 
   /**
+   * 渲染主職業、武器庫與技能天賦面板
+   */
+  private renderSkillsPanel() {
+    // 1. 渲染職業切換卡片
+    const classContainer = document.getElementById('class-cards-container');
+    if (classContainer) {
+      classContainer.innerHTML = '';
+      Object.values(CLASSES).forEach(cls => {
+        const isCurrent = cls.id === this.classSkillManager.currentClass.id;
+        const card = document.createElement('div');
+        card.className = 'feat-card';
+        card.style.cursor = 'pointer';
+        card.style.borderColor = isCurrent ? '#00e5ff' : 'rgba(255,255,255,0.1)';
+        card.style.background = isCurrent ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.03)';
+        card.innerHTML = `
+          <h4 style="color:${isCurrent ? '#ffd700' : '#00e5ff'}">${cls.name}</h4>
+          <p style="font-size:11px; color:#cbd5e1; margin-bottom:6px;">${cls.focus}</p>
+          <p style="font-size:12px; color:#94a3b8; line-height:1.5;">${cls.passiveDesc}</p>
+          <div style="margin-top:8px; font-size:11px; color:#ffd700;">${isCurrent ? '✔ 當前主職業' : '[點擊選擇]'}</div>
+        `;
+        card.addEventListener('click', () => {
+          this.classSkillManager.selectClass(cls.id);
+          this.sfx.playWhoosh(false);
+          this.renderSkillsPanel();
+        });
+        classContainer.appendChild(card);
+      });
+    }
+
+    // 2. 渲染官方武器庫切換
+    const weaponContainer = document.getElementById('weapon-cards-container');
+    if (weaponContainer) {
+      weaponContainer.innerHTML = '';
+      WEAPONS_CATALOG.forEach(weap => {
+        const isCurrent = weap.id === this.classSkillManager.currentWeapon.id;
+        const card = document.createElement('div');
+        card.className = 'feat-card';
+        card.style.cursor = 'pointer';
+        card.style.borderColor = isCurrent ? '#ffd700' : 'rgba(255,255,255,0.1)';
+        card.style.background = isCurrent ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.03)';
+        card.innerHTML = `
+          <h4 style="color:${isCurrent ? '#ffd700' : '#e2e8f0'}">${weap.name}</h4>
+          <p style="font-size:11px; color:#38bdf8;">【${weap.rarity}】ATK ${weap.atk} | 暴擊 ${(weap.critRate*100).toFixed(0)}%</p>
+          <p style="font-size:12px; color:#94a3b8; margin-top:4px;">${weap.trait}</p>
+          <div style="margin-top:8px; font-size:11px; color:#00e5ff;">${isCurrent ? '⚔️ 正在裝備' : '[點擊裝備]'}</div>
+        `;
+        card.addEventListener('click', () => {
+          this.classSkillManager.equipWeapon(weap.id);
+          this.sfx.playSwordDraw();
+          this.renderSkillsPanel();
+        });
+        weaponContainer.appendChild(card);
+      });
+    }
+
+    // 3. 渲染天賦技能樹加點
+    const spDisplay = document.getElementById('skill-points-display');
+    if (spDisplay) spDisplay.innerText = this.classSkillManager.skillPoints.toString();
+
+    const skillContainer = document.getElementById('skill-nodes-container');
+    if (skillContainer) {
+      skillContainer.innerHTML = '';
+      this.classSkillManager.skills.forEach(skill => {
+        const card = document.createElement('div');
+        card.className = 'feat-card';
+        const canUpgrade = this.classSkillManager.skillPoints >= skill.cost && skill.currentLevel < skill.maxLevel;
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h4 style="color:#00e5ff;">${skill.name}</h4>
+            <span style="font-size:12px; color:#ffd700;">Lv.${skill.currentLevel}/${skill.maxLevel}</span>
+          </div>
+          <p style="font-size:12px; color:#cbd5e1; margin:8px 0;">${skill.description}</p>
+          <button class="modal-close-btn" style="width:100%; border-color:${canUpgrade ? '#00e5ff' : '#475569'}; color:${canUpgrade ? '#00e5ff' : '#64748b'}; cursor:${canUpgrade ? 'pointer' : 'not-allowed'};">
+            ${skill.currentLevel >= skill.maxLevel ? '已達上限' : `學習/升級 (消耗 ${skill.cost} SP)`}
+          </button>
+        `;
+        const btn = card.querySelector('button');
+        if (canUpgrade && btn) {
+          btn.addEventListener('click', () => {
+            if (this.classSkillManager.upgradeSkill(skill.id)) {
+              this.sfx.playQuestComplete();
+              this.renderSkillsPanel();
+            }
+          });
+        }
+        skillContainer.appendChild(card);
+      });
+    }
+  }
+
+  /**
    * 渲染背包與角色屬性面板
    */
   private renderInventoryPanel() {
-    // 角色屬性
     const hpVal = document.getElementById('stat-hp');
     const spVal = document.getElementById('stat-sp');
     const atkVal = document.getElementById('stat-atk');
@@ -280,12 +371,11 @@ export class MenuManager {
     const weaponEquip = document.getElementById('equip-weapon-name');
 
     if (hpVal) hpVal.innerText = `${this.player.currentHealth.toFixed(0)} / ${this.player.maxHealth}`;
-    if (spVal) spVal.innerText = `${this.player.currentStamina.toFixed(0)} / ${this.player.maxStamina}`;
-    if (atkVal) atkVal.innerText = `${(35 * this.inventory.weaponDamageMultiplier).toFixed(0)} 物理 / ${(20 * this.dynamicWorld.damageMultiplier).toFixed(0)} 乙太`;
-    if (parryVal) parryVal.innerText = '0.18 秒 (黃金彈刀)';
-    if (weaponEquip) weaponEquip.innerText = this.inventory.weaponName;
+    if (spVal) spVal.innerText = `${this.player.currentStamina.toFixed(0)} / ${(this.player.maxStamina + this.classSkillManager.maxStaminaBonus).toFixed(0)}`;
+    if (atkVal) atkVal.innerText = `${this.classSkillManager.totalPhysicalDamage} 物理 (${this.classSkillManager.currentWeapon.name})`;
+    if (parryVal) parryVal.innerText = `${this.classSkillManager.parryWindow.toFixed(2)} 秒 (職業: ${this.classSkillManager.currentClass.name.split(' ')[0]})`;
+    if (weaponEquip) weaponEquip.innerText = this.classSkillManager.currentWeapon.name;
 
-    // 道具清單
     const bagContainer = document.getElementById('bag-grid-items');
     if (!bagContainer) return;
 
@@ -305,16 +395,16 @@ export class MenuManager {
         <div class="slot-name">以太結晶</div>
         <div class="slot-qty">x 1</div>
       </div>
-      <div class="inventory-grid-slot" title="鍛造星鐵礦石：艾琳工坊特製素材">
-        <div class="slot-icon">⛏️</div>
-        <div class="slot-name">精鍊星鐵錠</div>
-        <div class="slot-qty">${this.inventory.weaponDamageMultiplier > 1.0 ? '已淬火' : '待精鍊'}</div>
+      <div class="inventory-grid-slot" title="當前主手武器">
+        <div class="slot-icon">⚔️</div>
+        <div class="slot-name">${this.classSkillManager.currentWeapon.name}</div>
+        <div class="slot-qty">ATK ${this.classSkillManager.currentWeapon.atk}</div>
       </div>
     `;
   }
 
   /**
-   * 渲染世界圖鑑面板
+   * 渲染世界圖鑑面板 (包含第 1 至 10 層進階生態與 Boss 戰略)
    */
   private renderCodexPanel() {
     const codexContent = document.getElementById('codex-dynamic-content');
@@ -323,9 +413,21 @@ export class MenuManager {
     const floor = this.dynamicWorld.state.currentFloor;
     const weather = this.dynamicWorld.state.currentWeather;
 
+    let floorsHtml = '';
+    ADVANCED_FLOORS.forEach(f => {
+      floorsHtml += `
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px; margin-bottom:10px;">
+          <h4 style="color:#00e5ff; font-size:14px;">第 ${f.floor} 層：${f.name}</h4>
+          <p style="font-size:12px; color:#cbd5e1; margin:4px 0;"><b>安全區：</b>${f.safeZone} ｜ <b>環境機制：</b>${f.hazard}</p>
+          <p style="font-size:12px; color:#ffd700;"><b>守層 Boss：</b>${f.boss}</p>
+          <p style="font-size:11px; color:#94a3b8; line-height:1.6;">${f.bossTactic}</p>
+        </div>
+      `;
+    });
+
     codexContent.innerHTML = `
       <div class="codex-section">
-        <h3>🏛️ 當前樓層：${floor?.name_tc || '艾瑟里斯 第 1 層'} (${floor?.name_en || 'Verdant Breeze Plains'})</h3>
+        <h3>🏛️ 當前所在樓層：${floor?.name_tc || '艾瑟里斯 第 1 層'} (${floor?.name_en || 'Verdant Breeze Plains'})</h3>
         <p><b>安全區：</b>${floor?.safe_zone || '始源鎮 (Origin Town)'}</p>
         <p>${floor?.description || '千年前大斷裂封閉的古代浮空方舟，由星環議會建立，微型生態與以太結晶環繞。'}</p>
       </div>
@@ -333,44 +435,37 @@ export class MenuManager {
       <div class="codex-section">
         <h3>🌤️ 當前天候：${weather.name}</h3>
         <p>${weather.description}</p>
-        <p><span style="color:#00e5ff">以太加成：</span>傷害加成 x${weather.damageBonus}，體力恢復 x${weather.staminaBonus}</p>
+      </div>
+
+      <div class="codex-section">
+        <h3>🌌 進階高層樓層生態與 Boss 攻略手冊 (第 6 至 10 層)</h3>
+        <p style="font-size:12px; color:#94a3b8; margin-bottom:10px;">提取自《設定集 06》機密情報，由破曉之劍前線斥候提供：</p>
+        ${floorsHtml}
       </div>
 
       <div class="codex-section">
         <h3>⚔️ 艾瑟里斯主要勢力 (Factions)</h3>
         <ul>
-          <li><b>破曉之劍 (Blade of Dawn)</b>：前線攻略公會，團長雷納德駐紮於始源鎮，指導新人格擋與彈刀劍術。</li>
+          <li><b>破曉之劍 (Blade of Dawn)</b>：前線攻略公會，團長雷納德駐守始源鎮，指導新人格擋與彈刀劍術。</li>
           <li><b>鍛造同盟 (Smiths' Guild)</b>：生活系工會，艾琳掌控獨家星鐵冶煉技術，能大幅提升武器攻擊力。</li>
           <li><b>蒼穹情報網 (Aether Info Network)</b>：掌握各樓層 Boss 弱點與迷宮暗道的地下組織。</li>
           <li><b>虛空低語者 (Void Whisperers)</b>：阻撓攻略的敵對反派教團，召喚虛空漫遊者襲擊冒險者。</li>
         </ul>
       </div>
-
-      <div class="codex-section">
-        <h3>👑 守層首領分析 (Boss Intel)</h3>
-        <p><b>首領代號：</b>虛空漫遊者 (Void Stalker)</p>
-        <p><b>戰術要訣：</b>當 Boss 雙眼泛起赤紅兇芒時即為重斬起手式，在揮砍命中的 0.18 秒黃金窗口右鍵【完美格擋】，可彈開敵刀並令其陷入 1.8 秒失衡硬直！</p>
-      </div>
     `;
   }
 
-  /**
-   * 綁定設定控制項 (靈敏度、FOV、音量)
-   */
   private bindSettingsControls() {
-    // 1. 滑鼠靈敏度
     const sensSlider = document.getElementById('settings-sens') as HTMLInputElement;
     const sensVal = document.getElementById('settings-sens-val');
     if (sensSlider && sensVal) {
       sensSlider.addEventListener('input', () => {
         const val = parseFloat(sensSlider.value);
         sensVal.innerText = `${val.toFixed(1)}x`;
-        // 設定到玩家
         (this.player as any).mouseSensitivity = val * 0.0022;
       });
     }
 
-    // 2. 視角範圍 FOV
     const fovSlider = document.getElementById('settings-fov') as HTMLInputElement;
     const fovVal = document.getElementById('settings-fov-val');
     if (fovSlider && fovVal) {
@@ -383,7 +478,6 @@ export class MenuManager {
       });
     }
 
-    // 3. 全螢幕開關按鈕
     document.getElementById('settings-toggle-fs')?.addEventListener('click', () => {
       this.toggleFullscreen();
     });

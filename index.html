@@ -704,6 +704,7 @@
   <!-- 頂部快速功能列 (支援全螢幕、背包、圖鑑、指南、暫停) -->
   <div id="top-menu-bar">
     <button id="nav-btn-bag" class="top-nav-btn" title="打開背包與角色屬性 [B]">🎒 背包 (B)</button>
+    <button id="nav-btn-skills" class="top-nav-btn" style="border-color:#38bdf8; color:#38bdf8;" title="職業切換與天賦樹 [K]">🌟 職業天賦 (K)</button>
     <button id="nav-btn-codex" class="top-nav-btn" title="艾瑟里斯世界圖鑑 [L]">📜 圖鑑 (L)</button>
     <button id="nav-btn-guide" class="top-nav-btn" title="戰鬥指南與手勢 [H]">⚔️ 指南 (H)</button>
     <button id="nav-btn-settings" class="top-nav-btn" title="系統設定 [O]">⚙️ 設定 (O)</button>
@@ -775,6 +776,10 @@
         <button id="pause-btn-inventory" class="pause-item-btn">
           <span>🎒 角色屬性與背包道具</span>
           <span>[B]</span>
+        </button>
+        <button id="pause-btn-skills" class="pause-item-btn" style="border-color:#38bdf8; color:#38bdf8;">
+          <span>🌟 主職業切換與天賦樹</span>
+          <span>[K]</span>
         </button>
         <button id="pause-btn-codex" class="pause-item-btn">
           <span>📜 艾瑟里斯世界圖鑑與情報</span>
@@ -858,6 +863,43 @@
             <span class="stat-label">體力自然恢復</span>
             <span class="stat-val">+24 SP/秒</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.5 職業與技能樹面板 (Skills Modal) -->
+    <div id="modal-skills" class="game-modal" style="width: 950px;">
+      <div class="modal-header">
+        <div class="modal-title">🌟 主職業流派、武器庫與天賦樹</div>
+        <button class="modal-close-btn">關閉 [ESC]</button>
+      </div>
+
+      <!-- 職業切換區 -->
+      <div class="codex-section">
+        <h3>⚔️ 主職業流派切換 (Main Classes)</h3>
+        <p>依據《設定集 04》規範，覺醒者可在安全區隨意切換主職業，享有專屬被動與戰鬥補正：</p>
+        <div id="class-cards-container" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 12px;">
+          <!-- 動態注入 5 大職業卡片 -->
+        </div>
+      </div>
+
+      <!-- 官方武器庫切換 -->
+      <div class="codex-section">
+        <h3>🗡️ 官方武器庫鍛造與切換 (Weapons Catalog)</h3>
+        <p>依據《設定集 05》規格，點擊可即時切換手持武器，享有不同攻擊力與破韌特性：</p>
+        <div id="weapon-cards-container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px;">
+          <!-- 動態注入 4 把官方武器 -->
+        </div>
+      </div>
+
+      <!-- 天賦技能樹 -->
+      <div class="codex-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>🌲 覺醒者天賦技能樹 (Skill Trees)</h3>
+          <span style="color: #ffd700; font-weight: bold; font-size: 15px;">可用天賦點數：<span id="skill-points-display">3</span> SP</span>
+        </div>
+        <div id="skill-nodes-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+          <!-- 動態注入天賦節點 -->
         </div>
       </div>
     </div>
