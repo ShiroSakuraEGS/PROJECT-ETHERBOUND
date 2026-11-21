@@ -1,14 +1,11 @@
 /**
  * 音效合成管理器 (SoundEffects)
- * 透過 Web Audio API 程序化合成劍擊、破空、彈刀與受擊音效
- * 無需任何外部音檔資產，確保在任何網頁環境皆能零延遲播放
+ * 透過 Web Audio API 程序化合成劍擊、破空、彈刀、受擊與以太魔法劍氣音效
  */
 export class SoundEffects {
   private ctx: AudioContext | null = null;
 
-  constructor() {
-    // 延遲至玩家點擊畫面後初始化 AudioContext (符合瀏覽器自動播放政策)
-  }
+  constructor() {}
 
   private initCtx() {
     if (!this.ctx) {
@@ -22,7 +19,6 @@ export class SoundEffects {
 
   /**
    * 播放劍刃破空聲 (Whoosh)
-   * @param isHeavy 是否為重斬 (更低沉呼嘯)
    */
   public playWhoosh(isHeavy: boolean = false) {
     this.initCtx();
@@ -32,7 +28,7 @@ export class SoundEffects {
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1; // 白噪音
+      data[i] = Math.random() * 2 - 1;
     }
 
     const noise = this.ctx.createBufferSource();
@@ -51,8 +47,32 @@ export class SoundEffects {
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(this.ctx.destination);
-
     noise.start();
+  }
+
+  /**
+   * 播放以太劍氣波施法音效 (Ether Wave Magic Slash)
+   */
+  public playEtherWave() {
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, t);
+    osc.frequency.exponentialRampToValueAtTime(950, t + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(220, t + 0.4);
+
+    gain.gain.setValueAtTime(0.5, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(t + 0.46);
   }
 
   /**
@@ -62,7 +82,6 @@ export class SoundEffects {
     this.initCtx();
     if (!this.ctx) return;
 
-    // 衝擊低音
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'triangle';
@@ -77,7 +96,6 @@ export class SoundEffects {
     osc.start();
     osc.stop(this.ctx.currentTime + 0.16);
 
-    // 金屬刮擦高頻
     const metal = this.ctx.createOscillator();
     const metalGain = this.ctx.createGain();
     metal.type = 'sawtooth';
@@ -94,14 +112,14 @@ export class SoundEffects {
   }
 
   /**
-   * 播放完美格擋彈刀聲 (Perfect Parry - 清脆的高頻金屬共鳴)
+   * 播放完美格擋彈刀聲 (Perfect Parry)
    */
   public playParry() {
     this.initCtx();
     if (!this.ctx) return;
 
     const t = this.ctx.currentTime;
-    const freqs = [1200, 1850, 2400]; // 雙金屬泛音
+    const freqs = [1200, 1850, 2400];
 
     freqs.forEach((f) => {
       if (!this.ctx) return;
@@ -111,7 +129,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(f, t);
 
       gain.gain.setValueAtTime(0.5, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6); // 長餘音
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
@@ -140,27 +158,5 @@ export class SoundEffects {
     gain.connect(this.ctx.destination);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.11);
-  }
-
-  /**
-   * 播放敵人蓄力攻擊預警音 (Telegraph Windup)
-   */
-  public playTelegraph() {
-    this.initCtx();
-    if (!this.ctx) return;
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(440, this.ctx.currentTime + 0.35);
-
-    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.36);
   }
 }
