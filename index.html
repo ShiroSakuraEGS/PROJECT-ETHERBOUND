@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROJECT: ETHERBOUND — 網頁 3D 戰鬥原型</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a0c10;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, "Microsoft JhengHei", sans-serif;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* 遊戲 HUD 覆蓋層 */
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    /* 準心 */
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 8px rgba(0, 200, 255, 0.8);
+      transition: all 0.15s ease;
+    }
+    #crosshair.in-stance {
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border: 2px dashed #00e5ff;
+      animation: rotateStance 4s linear infinite;
+    }
+    @keyframes rotateStance {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    /* 滑鼠揮劍軌跡指示器 */
+    #gesture-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 16px;
+      font-weight: bold;
+      color: #00e5ff;
+      text-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      white-space: nowrap;
+    }
+    /* 玩家狀態條 (左上角) */
+    .status-bars {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .bar-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 20, 28, 0.75);
+      backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+    .bar-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ddd;
+      width: 55px;
+      letter-spacing: 1px;
+    }
+    .bar-track {
+      width: 220px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      transition: width 0.12s ease;
+    }
+    #health-fill {
+      background: linear-gradient(90deg, #e53935, #ff5252);
+      box-shadow: 0 0 10px rgba(229, 57, 53, 0.6);
+      width: 100%;
+    }
+    #stamina-fill {
+      background: linear-gradient(90deg, #00b0ff, #00e5ff);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+      width: 100%;
+    }
+    /* 畫面戰鬥反饋通知 */
+    #combat-banner {
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .parry-text {
+      color: #ffd700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 40px rgba(255, 165, 0, 0.8);
+    }
+    /* 點擊開始畫面遮罩 */
+    #blocker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(6, 8, 12, 0.85);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      cursor: pointer;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    #blocker h1 {
+      font-size: 42px;
+      letter-spacing: 6px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #00e5ff, #80d8ff, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+    }
+    #blocker h2 {
+      font-size: 16px;
+      color: #90caf9;
+      font-weight: 400;
+      margin-bottom: 28px;
+    }
+    .instructions-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 20px 30px;
+      max-width: 580px;
+      text-align: left;
+      line-height: 1.8;
+      font-size: 14px;
+      margin-bottom: 28px;
+      color: #cfd8dc;
+    }
+    .instructions-card b {
+      color: #00e5ff;
+    }
+    .start-prompt {
+      font-size: 20px;
+      font-weight: bold;
+      color: #00e5ff;
+      animation: pulse 1.8s infinite;
+      letter-spacing: 2px;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+    /* 右側操作面板小提示 */
+    #guide-pill {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(15, 20, 28, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #b0bec5;
+      line-height: 1.7;
+    }
+    #guide-pill span {
+      color: #00e5ff;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="ui-overlay">
+    <!-- 準心 -->
+    <div id="crosshair"></div>
+    <div id="gesture-indicator">攻擊手勢</div>
+    <div id="combat-banner"></div>
+
+    <!-- 生命與體力條 -->
+    <div class="status-bars">
+      <div class="bar-container">
+        <span class="bar-label">HP 生命</span>
+        <div class="bar-track">
+          <div id="health-fill" class="bar-fill"></div>
+        </div>
+      </div>
+      <div class="bar-container">
+        <span class="bar-label">SP 體力</span>
+        <div class="bar-track">
+          <div id="stamina-fill" class="bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快捷按鍵小卡 -->
+    <div id="guide-pill">
+      <div><span>滑鼠移動</span>：控制第一人稱視角</div>
+      <div><span>按住左鍵 + 滑鼠滑動</span>：進入劍術架勢並<b>真軌跡揮劍</b></div>
+      <div><span>滑動速度</span>：慢速為輕斬 / 快速為重斬</div>
+      <div><span>滑鼠右鍵</span>：防禦（精準時機觸發<b>完美格擋 Parry</b>）</div>
+      <div><span>WASD / Shift / Space</span>：移動 / 衝刺 / 跳躍</div>
+    </div>
+  </div>
+
+  <!-- 點擊開始畫面 -->
+  <div id="blocker">
+    <h1>ETHERBOUND</h1>
+    <h2>以太界域 — 網頁 3D 第一人稱滑鼠揮劍戰鬥原型</h2>
+    <div class="instructions-card">
+      <p>⚔️ <b>真正用滑鼠軌跡揮劍</b>：按住【滑鼠左鍵】進入劍術模式，朝左、右、上、下快速滑動滑鼠，劍身將跟隨您的軌跡進行斬擊！</p>
+      <p>⚡ <b>力道與破防</b>：滑動越快傷害越高（重斬可破防），揮劍將消耗體力（SP）。</p>
+      <p>🛡️ <b>完美格擋（Parry）</b>：敵人出招前會亮起紅光預警，在命中前瞬間按下【滑鼠右鍵】觸發彈刀，使敵人陷入破防硬直！</p>
+      <p>🎯 <b>場景內容</b>：內含「訓練木人（固定試刀）」與「巡邏衛兵 AI（會追逐並攻擊玩家）」。</p>
+    </div>
+    <div class="start-prompt">【 點擊畫面任意處進入遊戲 】</div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
