@@ -8,10 +8,15 @@ import { SlashDirection, GestureResult } from './combat/GestureRecognizer';
 import { EtherWave } from './combat/EtherWave';
 import { BladeTrail } from './vfx/BladeTrail';
 import { AmbientParticles } from './vfx/AmbientParticles';
+import { CameraImpulse } from './camera/CameraImpulse';
+import { InkSplatVFX } from './vfx/InkSplatVFX';
 
 /**
  * 遊戲主程式 (Game Application)
- * 整合渲染器、相機、實體狀態、打擊頓挫 (Hitstop)、Ribbon 劍刃光軌、以太環境微粒與粒子特效
+ * 整合三大支柱核心技術：
+ * 1. Three.js Game Skills: 核心玩法迴圈、第一人稱、ACES 渲染、HUD
+ * 2. NixieFX: Ribbon 劍刃光軌、以太空間微粒
+ * 3. Ink Studio: 二階物理相機衝擊、水墨墨點噴濺 (Ink Splats)
  */
 export class Game {
   private renderer: THREE.WebGLRenderer;
@@ -23,15 +28,16 @@ export class Game {
   private sfx: SoundEffects;
   private hud: HUD;
 
-  // VFX 粒子與光軌系統 (參考 nixie-fx 架構)
+  // VFX 與視覺強化系統 (三大開源支柱)
   private bladeTrail: BladeTrail;
   private ambientParticles: AmbientParticles;
+  private cameraImpulse: CameraImpulse;
+  private inkSplat: InkSplatVFX;
 
-  // 打擊頓挫 (Hitstop) 與微震 (Camera Shake)
+  // 打擊頓挫 (Hitstop)
   private hitstopTimer: number = 0;
-  private cameraShakeIntensity: number = 0;
 
-  // 命中火花粒子系統
+  // 命中火花粒子
   private sparkParticles: THREE.Points;
   private sparkGeo: THREE.BufferGeometry;
   private sparkPositions: Float32Array;
@@ -42,7 +48,7 @@ export class Game {
   private clock = new THREE.Clock();
 
   constructor() {
-    // 1. 初始化 Three.js 渲染器 (採用 AAA 等級 ACES 色調映射與軟陰影)
+    // 1. 初始化 Three.js 渲染器 (ACES 色調映射)
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -62,9 +68,11 @@ export class Game {
     this.player = new Player(this.camera, this.sfx);
     this.arena.scene.add(this.camera);
 
-    // 3. 初始化 VFX 系統 (光軌與以太微粒)
+    // 3. 初始化三大支柱 VFX 與動力學模組
     this.bladeTrail = new BladeTrail(this.arena.scene);
     this.ambientParticles = new AmbientParticles(this.arena.scene);
+    this.cameraImpulse = new CameraImpulse();
+    this.inkSplat = new InkSplatVFX(this.arena.scene);
 
     // 4. 生成目標實體 (訓練木人 + 敵人士兵)
     const dummy = new Enemy(this.arena.scene, EnemyType.Dummy, new THREE.Vector3(0, 0, 0));
@@ -87,6 +95,8 @@ export class Game {
 
     // 6. 綁定揮劍與技能回調
     this.player.onAttackExecuted = (result: GestureResult) => {
+      // 揮劍時疊加微弱相機慣性衝擊
+      this.cameraImpulse.addSwingImpulse(new THREE.Vector2(result.vector.x, result.vector.y), result.isHeavy);
       this.checkPlayerAttackHit(result);
     };
 
@@ -108,10 +118,9 @@ export class Game {
     const blocker = document.getElementById('blocker')!;
     const startBtn = document.getElementById('start-btn')!;
 
-    // 點擊「拔劍進入以太界域」按鈕
     startBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.sfx.playSwordDraw(); // 播放拔劍龍鳴音效
+      this.sfx.playSwordDraw();
       document.body.requestPointerLock();
     });
 
@@ -142,7 +151,9 @@ export class Game {
     this.etherWaves.push(wave);
 
     this.hud.showBanner('⚡ 釋放劍技：【以太劍氣波】(ETHER WAVE)！');
-    this.cameraShakeIntensity = 0.05;
+    this.cameraImpulse.addImpulse(new THREE.Vector3(0, 0, 0.05));
+    // 施法時噴發以太水墨光斑
+    this.inkSplat.spawnInkBurst(spawnPos, forward, true);
   }
 
   private updateEtherWaves(delta: number) {
@@ -164,7 +175,12 @@ export class Game {
           enemy.takeDamage(wave.damage, SlashDirection.Right, true);
           this.sfx.playHitImpact();
           this.spawnSparks(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
-          this.cameraShakeIntensity = 0.08;
+          
+          // 觸發物理彈簧相機後座力與水墨爆散
+          const forward = new THREE.Vector3();
+          this.camera.getWorldDirection(forward);
+          this.cameraImpulse.addHitImpact(true);
+          this.inkSplat.spawnInkBurst(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), forward, true);
           this.triggerHitstop(0.08);
 
           this.hud.showBanner(`💥 劍氣貫穿！造成 ${wave.damage} 點傷害！`);
@@ -193,7 +209,10 @@ export class Game {
 
         this.sfx.playHitImpact();
         this.triggerHitstop(0.06);
-        this.cameraShakeIntensity = result.isHeavy ? 0.08 : 0.04;
+
+        // 觸發真實物理彈簧衝擊與水墨噴濺
+        this.cameraImpulse.addHitImpact(result.isHeavy);
+        this.inkSplat.spawnInkBurst(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.4, 0)), forward, result.isHeavy);
         this.spawnSparks(enemy.mesh.position.clone().add(new THREE.Vector3(0, 1.4, 0)));
 
         const heavyLabel = result.isHeavy ? '【重斬】' : '【輕斬】';
@@ -216,18 +235,21 @@ export class Game {
   private handleEnemyAttack(enemy: Enemy) {
     const rawDamage = 25;
     const result = this.player.takeDamage(rawDamage);
+    const forward = new THREE.Vector3();
+    this.camera.getWorldDirection(forward);
 
     if (result.parried) {
       enemy.triggerParried();
       this.triggerHitstop(0.12);
-      this.cameraShakeIntensity = 0.06;
+      this.cameraImpulse.addParryImpulse(); // 彈刀強烈回彈
+      this.inkSplat.spawnInkBurst(this.player.position.clone().add(new THREE.Vector3(0, 0, -1)), forward, true);
       this.hud.showBanner('⚡ 完美格擋 (PERFECT PARRY)！敵人破防！', true);
       this.spawnSparks(this.player.position.clone().add(new THREE.Vector3(0, 0, -1)));
     } else if (result.blocked) {
-      this.cameraShakeIntensity = 0.03;
+      this.cameraImpulse.addImpulse(new THREE.Vector3(0, 0, 0.04));
       this.hud.showBanner(`🛡️ 格擋抵禦！承受 ${result.damageDealt.toFixed(0)} 點輕微傷害`);
     } else {
-      this.cameraShakeIntensity = 0.12;
+      this.cameraImpulse.addImpulse(new THREE.Vector3(0, -0.05, 0.12)); // 受擊劇烈後震
       this.hud.showBanner(`💥 遭到敵方重擊！損失 ${result.damageDealt} 生命！`);
     }
   }
@@ -278,36 +300,37 @@ export class Game {
       return;
     }
 
-    // 1. 更新玩家
+    // 1. 更新玩家實體
     this.player.update(delta, elapsedTime);
 
-    // 2. 採樣劍尖與劍顎座標，驅動 Ribbon 劍刃光軌
+    // 2. 更新彈簧阻尼相機衝擊 (Camera Impulse) 並套用至攝影機
+    this.cameraImpulse.update(delta);
+    this.camera.position.add(this.cameraImpulse.offset);
+    this.camera.rotation.x += this.cameraImpulse.rotationOffset.x;
+    this.camera.rotation.y += this.cameraImpulse.rotationOffset.y;
+    this.camera.rotation.z += this.cameraImpulse.rotationOffset.z;
+
+    // 3. 採樣劍尖與劍顎座標，驅動 Ribbon 劍刃光軌
     const tipPos = this.player.sword.getBladeTipPosition();
     const basePos = this.player.sword.getBladeBasePosition();
     this.bladeTrail.addSample(tipPos, basePos, this.player.sword.swinging);
     this.bladeTrail.update(delta);
 
-    // 3. 更新以太空間環境微粒
+    // 4. 更新以太空間環境微粒與水墨墨滴噴濺
     this.ambientParticles.update(delta, elapsedTime);
+    this.inkSplat.update(delta);
 
-    // 4. 更新敵人 AI
+    // 5. 更新敵人 AI
     for (const enemy of this.enemies) {
       enemy.update(delta, this.player.position, (attackingEnemy) => {
         this.handleEnemyAttack(attackingEnemy);
       });
     }
 
-    // 5. 更新以太劍氣波與粒子火花
+    // 6. 更新以太劍氣波與粒子火花
     this.updateEtherWaves(delta);
     this.updateSparks(delta);
     this.arena.update(elapsedTime);
-
-    // 6. 相機微震衰減
-    if (this.cameraShakeIntensity > 0) {
-      this.camera.position.x += (Math.random() - 0.5) * this.cameraShakeIntensity;
-      this.camera.position.y += (Math.random() - 0.5) * this.cameraShakeIntensity;
-      this.cameraShakeIntensity = Math.max(0, this.cameraShakeIntensity - delta * 0.4);
-    }
 
     // 7. 同步 HUD
     this.hud.updateStatus(
